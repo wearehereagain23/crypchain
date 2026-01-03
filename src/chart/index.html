@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Cryp-Chain</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <link rel="stylesheet" href="./css/nav.css">
+    <link rel="stylesheet" href="./css/watchlist.css">
+
+    <style>
+        :root {
+            --bg: #0b1220;
+            --panel: #0e1620;
+            --muted: #9aa4b2;
+            --text: #d7e6f3;
+            --bull: #06d6a0;
+            --bear: #ff6b6b;
+            --accent: #7c5cff;
+            --glass: rgba(255, 255, 255, 0.03);
+            --nav-w: 72px;
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+
+        .app {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* --- MAIN LAYOUT ENGINE --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            padding: 12px;
+            overflow: hidden;
+        }
+
+        .layout {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+            height: 100%;
+            align-items: stretch;
+        }
+
+        .center {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        /* --- CHART CARD --- */
+        .card {
+            flex: 1;
+            position: relative;
+            min-height: 0;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+            border: 1px solid var(--glass);
+            background: #071016;
+            display: block;
+        }
+
+        /* --- RESPONSIVE OVERRIDES --- */
+        @media (max-width: 1024px) {
+            .app {
+                flex-direction: column;
+            }
+
+            .main-content {
+                padding: 10px;
+                padding-bottom: 75px;
+                height: calc(100vh - 65px);
+                overflow-y: auto;
+                display: block;
+            }
+
+            .layout {
+                flex-direction: column;
+                height: auto;
+                display: flex;
+                gap: 10px;
+            }
+
+            .card {
+                height: 50vh;
+                min-height: 350px;
+                flex: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <nav class="side-nav">
+            <a href="index.html" class="nav-item"><i class="ph ph-chart-line"></i><span>CHART</span></a>
+            <a href="market.html" class="nav-item"><i class="ph ph-arrows-left-right"></i><span>MARKET</span></a>
+            <a href="profile.html" class="nav-item"><i class="ph ph-user"></i><span>PROFILE</span></a>
+            <a href="history.html" class="nav-item"><i
+                    class="ph ph-clock-counter-clockwise"></i><span>HISTORY</span></a>
+            <div class="nav-item" style="margin-top:auto" onclick="handleLogout()">
+                <i class="ph ph-sign-out"></i><span>LOGOUT</span>
+            </div>
+        </nav>
+
+        <div class="main-content">
+            <div class="layout">
+                <div class="center">
+                    <div class="card">
+                        <canvas id="chartCanvas"></canvas>
+                    </div>
+                </div>
+
+                <div class="watch">
+                    <div class="wl-head">
+                        <h3>Watchlist</h3>
+                    </div>
+                    <div class="wl-list" id="watchlistItems"></div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="mobile-nav">
+            <a href="index.html" class="nav-item"><i class="ph ph-chart-line"></i></a>
+            <a href="market.html" class="nav-item"><i class="ph ph-arrows-left-right"></i></a>
+            <a href="profile.html" class="nav-item"><i class="ph ph-user"></i></a>
+            <a href="history.html" class="nav-item"><i class="ph ph-clock-counter-clockwise"></i></a>
+            <div class="nav-item" onclick="handleLogout()"><i class="ph ph-sign-out"></i></div>
+        </nav>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script type="module">
+        import { supabase } from './js/chart.supabase.js';
+        import { initNavigation } from './js/nav.js';
+        import { initChart, setActiveSymbol } from './js/chart-engine.js';
+        import { renderWatchlist } from './js/watchlist.js';
+        import { getUserIdFromUrl } from './js/utilities.js';
+        import { USER_TABLE } from '../config.js';
+
+        /**
+         * Rule: Full function replacement.
+         * Logic: Validates session and listens for Realtime login_ID changes to force logout.
+         * Debug: Explicit logs for session invalidation.
+         */
+        import { checkSecurityIntegrity } from './js/notifications.js';
+
+        // Check every 5 seconds
+        setInterval(checkSecurityIntegrity, 5000);
+
+
+        async function validateAndStart() {
+            initNavigation();
+
+            const userId = getUserIdFromUrl(); // This is the UUID text from URL
+            const savedLoginId = localStorage.getItem('login_ID');
+
+            // 1. Initial Guard
+            if (!userId || !savedLoginId) {
+                console.error("[DEBUG] Missing session data. Redirecting to login.");
+                window.location.href = '../login.html';
+                return;
+            }
+
+            try {
+                // 2. Initial Server Validation
+                const { data: user, error } = await supabase
+                    .from(USER_TABLE)
+                    .select('uuid, login_ID')
+                    .eq('uuid', userId)
+                    .single();
+
+                if (error || !user || user.login_ID !== savedLoginId) {
+                    console.error("[DEBUG] Auth Mismatch or User Not Found.");
+                    logout();
+                    return;
+                }
+
+                // 3. Realtime Listener for Instant Logout
+                // Watches for any UPDATE on THIS specific user's row
+                supabase.channel('session-monitor')
+                    .on(
+                        'postgres_changes',
+                        {
+                            event: 'UPDATE',
+                            schema: 'public',
+                            table: USER_TABLE,
+                            filter: `uuid=eq.${userId}`
+                        },
+                        (payload) => {
+                            console.log("[DEBUG] Realtime Update Detected:", payload.new);
+
+                            // If the login_ID in the database changed, it's an instant logout
+                            if (payload.new.login_ID !== savedLoginId) {
+                                console.warn("[DEBUG] login_ID changed in DB. Forcing Logout.");
+                                logout();
+                            }
+                        }
+                    )
+                    .subscribe();
+
+                // 4. Initialize Page Components
+                renderWatchlist();
+                await initChart('chartCanvas');
+
+                window.addEventListener('resize', () => { initChart('chartCanvas'); });
+                window.changeSymbol = async (symbol) => { await setActiveSymbol(symbol); };
+
+                console.log("[DEBUG] Chart initialized and monitoring session...");
+
+            } catch (e) {
+                console.error("[DEBUG] Critical Boot Error:", e);
+                window.location.href = '../login.html';
+            }
+        }
+
+        /**
+         * Simple Logout Helper
+         */
+        function logout() {
+            localStorage.removeItem('login_ID');
+            localStorage.removeItem('user_uuid');
+            window.location.href = '../login.html';
+        }
+
+        validateAndStart();
+    </script>
+
+</body>
+
+</html>

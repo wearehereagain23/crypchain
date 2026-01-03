@@ -1,0 +1,60 @@
+/* --- NAVIGATION LAYOUT --- */
+.side-nav {
+    width: var(--nav-w);
+    background: var(--panel);
+    border-right: 1px solid var(--glass);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 0;
+    gap: 28px;
+    flex-shrink: 0;
+}
+
+.mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    height: 65px;
+    background: var(--panel);
+    border-top: 1px solid var(--glass);
+    justify-content: space-around;
+    align-items: center;
+    z-index: 1000;
+}
+
+/* --- NAV ITEMS --- */
+.nav-item {
+    color: var(--muted);
+    font-size: 26px;
+    cursor: pointer;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: 0.2s;
+}
+
+.nav-item span {
+    font-size: 9px;
+    margin-top: 5px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.nav-item.active,
+.nav-item:hover {
+    color: var(--accent);
+}
+
+/* --- RESPONSIVE TOGGLE --- */
+@media (max-width: 1024px) {
+    .side-nav {
+        display: none;
+    }
+
+    .mobile-nav {
+        display: flex;
+    }
+}

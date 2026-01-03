@@ -1,0 +1,112 @@
+/* --- WATCHLIST CONTAINER --- */
+.watch {
+    width: 320px;
+    background: var(--panel);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid var(--glass);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.wl-head {
+    flex-shrink: 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--glass);
+    margin-bottom: 10px;
+}
+
+.wl-head h3 {
+    margin: 0;
+    font-size: 14px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* --- SCROLLABLE LIST --- */
+.wl-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.wl-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.wl-list::-webkit-scrollbar-thumb {
+    background: var(--glass);
+    border-radius: 4px;
+}
+
+/* --- ITEMS & TYPOGRAPHY --- */
+.watchlist-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.01);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.2s;
+    border: 1px solid transparent;
+}
+
+.watchlist-item:hover {
+    background: var(--glass);
+}
+
+.watchlist-item.active {
+    background: rgba(124, 92, 255, 0.1);
+    border-color: rgba(124, 92, 255, 0.3);
+}
+
+.wl-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.wl-logo img {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+}
+
+.wl-symbol {
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.wl-right {
+    text-align: right;
+}
+
+.wl-price {
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 800;
+    font-size: 15px;
+    display: block;
+}
+
+.wl-change {
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 2px;
+}
+
+/* --- MOBILE TWEAK --- */
+@media (max-width: 1024px) {
+    .watch {
+        width: 100%;
+        height: auto;
+        min-height: 400px;
+        flex: none;
+    }
+}

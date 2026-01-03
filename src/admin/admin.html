@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Admin Control Panel</title>
+    <style>
+        :root {
+            --bg: #0b1220;
+            --panel: rgba(17, 23, 34, 0.95);
+            --border: rgba(255, 255, 255, 0.05);
+            --text: #d7e6f3;
+            --muted: #8b9bb5;
+            --accent: #2fece6;
+            --danger: #ff6b6b;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: Inter, sans-serif;
+            margin: 0;
+            padding: 40px;
+        }
+
+        .wrap {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--panel);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.02);
+            margin-bottom: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .small-muted {
+            color: var(--muted);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            background: #0b1220;
+            border: 1px solid var(--border);
+            color: var(--text);
+            margin: 5px 0 15px 0;
+        }
+
+        .btn {
+            padding: 15px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 700;
+            width: 100%;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .btn.primary {
+            background: var(--accent);
+            color: #002b2b;
+        }
+
+        .btn.danger {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        h1 {
+            font-size: 1.3rem;
+            margin: 0 0 20px 0;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 15px;
+            color: var(--accent);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <div class="card">
+            <h1 id="statusTitle">System Status</h1>
+            <div id="dynamicContent"></div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script type="module" src="./admin.js"></script>
+</body>
+
+</html>

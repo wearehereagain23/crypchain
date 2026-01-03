@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Login - Cryp-Chain</title>
+    <style>
+        :root {
+            --bg: #0b1220;
+            --panel: #0e1620;
+            --text: #d7e6f3;
+            --accent: #7c5cff;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: Inter, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .login-container {
+            background: var(--panel);
+            padding: 30px;
+            border-radius: 8px;
+            width: 320px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #2a3441;
+            background: #0b1220;
+            color: #fff;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            border-radius: 4px;
+            border: none;
+            background: var(--accent);
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #errorMessage {
+            color: #ff6b6b;
+            font-size: 14px;
+            margin-top: 10px;
+            min-height: 1.2em;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+        <h2>Custom Access</h2>
+        <input type="text" id="loginIdInput" placeholder="Enter Login ID..." autocomplete="off" />
+        <button id="loginButton">Access Terminal</button>
+        <div id="errorMessage"></div>
+    </div>
+
+    <script type="module">
+        import { supabase } from './chart/js/chart.supabase.js';
+        import { USER_TABLE } from './config.js';
+
+        const loginInput = document.getElementById('loginIdInput');
+        const loginBtn = document.getElementById('loginButton');
+        const errorMsg = document.getElementById('errorMessage');
+
+        /**
+         * Rule: Full function replacement.
+         * Logic: Authenticates via login_ID field in user_profiles.
+         * Debug: Console logs table name and search values.
+         */
+        async function performLogin() {
+            const loginIdValue = loginInput.value.trim();
+
+            if (!loginIdValue) {
+                errorMsg.textContent = "ID Required.";
+                return;
+            }
+
+            loginBtn.disabled = true;
+            errorMsg.textContent = "";
+            console.log(`[DEBUG] Querying ${USER_TABLE} for login_ID: ${loginIdValue}`);
+
+            try {
+                // Query the database directly using your custom auth logic
+                const { data, error } = await supabase
+                    .from(USER_TABLE)
+                    .select('uuid, login_ID')
+                    .eq('login_ID', loginIdValue);
+
+                if (error) {
+                    console.error('[DEBUG] Supabase Error:', error);
+                    errorMsg.textContent = "Database Connection Error.";
+                    return;
+                }
+
+                if (!data || data.length === 0) {
+                    console.error('[DEBUG] Access Denied: No record found for ID:', loginIdValue);
+                    errorMsg.textContent = "Invalid Login ID.";
+                    return;
+                }
+
+                // Match found
+                const user = data[0];
+                console.log('[DEBUG] Auth Success. User UUID:', user.uuid);
+
+                // Set persistent session
+                localStorage.setItem('login_ID', user.login_ID);
+                localStorage.setItem('user_uuid', user.uuid);
+
+                // Redirect to chart index with the UUID string from the database row
+                window.location.href = `./chart/index.html?user_id=${user.uuid}`;
+
+            } catch (err) {
+                console.error('[DEBUG] Critical Auth Exception:', err);
+                errorMsg.textContent = "System Exception occurred.";
+            } finally {
+                loginBtn.disabled = false;
+            }
+        }
+
+        loginBtn.onclick = performLogin;
+        loginInput.onkeydown = (e) => { if (e.key === 'Enter') performLogin(); };
+    </script>
+</body>
+
+</html>

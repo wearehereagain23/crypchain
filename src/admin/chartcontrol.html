@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Matrix Chart Control — Admin</title>
+    <style>
+        :root {
+            --bg: #030712;
+            --panel: #0b1120;
+            --muted: #64748b;
+            --text: #f1f5f9;
+            --accent: #06d6a0;
+            --danger: #ef4444;
+            --glass: rgba(255, 255, 255, 0.05);
+            --radius: 12px;
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1250px;
+            margin: 20px auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 450px;
+            gap: 24px;
+            align-items: start;
+        }
+
+        @media (max-width: 1024px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--panel);
+            border-radius: var(--radius);
+            padding: 24px;
+            border: 1px solid var(--glass);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .panel::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+
+        h2 {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent);
+            margin-bottom: 20px;
+            border-left: 3px solid var(--accent);
+            padding-left: 10px;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .col {
+            flex: 1;
+            min-width: 160px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 11px;
+            color: var(--muted);
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        input,
+        select {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            color: var(--text);
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 10px rgba(6, 214, 160, 0.2);
+        }
+
+        .btn {
+            background: #06d6a0;
+            color: #030712;
+            border: none;
+            padding: 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            filter: brightness(1.2);
+            box-shadow: 0 0 15px var(--accent);
+        }
+
+        .btn.warn {
+            background: transparent;
+            border: 1px solid var(--danger);
+            color: var(--danger);
+        }
+
+        .btn.warn:hover {
+            background: var(--danger);
+            color: white;
+            box-shadow: 0 0 15px var(--danger);
+        }
+
+        .preview-wrapper {
+            position: relative;
+            width: 100%;
+            height: 350px;
+            background: #020617;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #1e293b;
+        }
+
+        .scanline {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.3) 51%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .price-axis {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 80px;
+            background: rgba(15, 23, 42, 0.8);
+            border-left: 1px solid var(--glass);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 15px 5px;
+            font-size: 10px;
+            color: var(--accent);
+            z-index: 3;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="grid">
+            <div class="settings">
+                <div class="panel">
+                    <h2>Chart Simulation Speed & Duration</h2>
+                    <div class="controls">
+                        <div class="row">
+                            <div class="col">
+                                <label>Refresh Speed (Tick)</label>
+                                <select id="tickInterval">
+                                    <option value="1000">1 Second</option>
+                                    <option value="5000">5 Seconds</option>
+                                    <option value="10000">10 Seconds</option>
+                                </select>
+                            </div>
+                            <div class="col">
+                                <label>Candle Window (Duration)</label>
+                                <select id="candleDuration">
+                                    <option value="60000">1 Minute</option>
+                                    <option value="3600000">1 Hour</option>
+                                    <option value="43200000">12 Hours</option>
+                                    <option value="86400000">24 Hours</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button id="saveGlobalBtn" class="btn">Update Matrix Sync</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h2>Account Level Thresholds (%)</h2>
+                    <div class="controls">
+                        <div class="row">
+                            <div class="col">
+                                <label>Starter (%)</label>
+                                <input type="text" id="lvl_starter" placeholder="150">
+                            </div>
+                            <div class="col">
+                                <label>Mini (%)</label>
+                                <input type="text" id="lvl_mini" placeholder="450">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <label>Silver (%)</label>
+                                <input type="text" id="lvl_silver" placeholder="700">
+                            </div>
+                            <div class="col">
+                                <label>Gold (%)</label>
+                                <input type="text" id="lvl_gold" placeholder="1000">
+                            </div>
+                            <div class="col">
+                                <label>Platinum (%)</label>
+                                <input type="text" id="lvl_platinum" placeholder="2500">
+                            </div>
+                        </div>
+                        <button id="saveAccountBtn" class="btn">Update Tiers</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h2>Asset Simulation Range</h2>
+                    <div class="controls">
+                        <div class="col">
+                            <label>Selection Index</label>
+                            <select id="assetSelect">
+                                <option value="BTC">Bitcoin (BTC)</option>
+                                <option value="ETH">Ethereum (ETH)</option>
+                                <option value="SOL">Solana (SOL)</option>
+                                <option value="BNB">Binance (BNB)</option>
+                                <option value="XRP">Ripple (XRP)</option>
+                                <option value="DOGE">Dogecoin (DOGE)</option>
+                                <option value="MATIC">Polygon (MATIC)</option>
+                                <option value="ADA">Cardano (ADA)</option>
+                                <option value="LTC">Litecoin (LTC)</option>
+                                <option value="TRX">TRON (TRX)</option>
+                                <option value="DOT">Polkadot (DOT)</option>
+                                <option value="AVAX">Avalanche (AVAX)</option>
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col"><label>Hard Floor (Min)</label><input type="number" id="customRangeMin"
+                                    step="any" placeholder="0.00"></div>
+                            <div class="col"><label>Hard Ceiling (Max)</label><input type="number" id="customRangeMax"
+                                    step="any" placeholder="0.00"></div>
+                        </div>
+                        <button id="saveRangeBtn" class="btn warn">Initialize Boundary Lock</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>Market Live Preview</h2>
+                <div class="preview-wrapper">
+                    <div class="scanline"></div>
+                    <canvas id="previewCanvas"></canvas>
+                    <div class="price-axis">
+                        <span id="axisMax">---</span>
+                        <span id="axisMid">---</span>
+                        <span id="axisMin">---</span>
+                    </div>
+                </div>
+                <div id="metaRange" style="margin-top:15px; color: var(--accent); font-size: 11px; font-weight: bold;">
+                    [SYSTEM_IDLE]</div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script type="module" src="chartcontrol.js"></script>
+    <script type="module" src="range.js"></script>
+</body>
+
+</html>

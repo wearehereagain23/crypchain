@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+    <title>History — Cryp-Chain</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="./css/nav.css">
+
+    <style>
+        :root {
+            --bg: #0b1220;
+            --panel: #0e1620;
+            --muted: #9aa4b2;
+            --text: #d7e6f3;
+            --accent: #7c5cff;
+            --bull: #06d6a0;
+            --bear: #ff6b6b;
+            --glass: rgba(255, 255, 255, 0.03);
+            --nav-w: 72px;
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+
+        .app {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            overflow: hidden;
+        }
+
+        .history-container {
+            background: var(--panel);
+            border: 1px solid var(--glass);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .history-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--glass);
+        }
+
+        .table-wrapper {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            background: #141d2b;
+            padding: 15px 20px;
+            color: var(--muted);
+            font-size: 11px;
+            text-transform: uppercase;
+            z-index: 10;
+            text-align: left;
+        }
+
+        tbody td {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--glass);
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .badge-win {
+            background: rgba(6, 214, 160, 0.1);
+            color: var(--bull);
+        }
+
+        .badge-loss {
+            background: rgba(255, 107, 107, 0.1);
+            color: var(--bear);
+        }
+
+        @media (max-width: 1024px) {
+            .app {
+                flex-direction: column;
+            }
+
+            .main-content {
+                padding: 12px;
+                padding-bottom: 75px;
+                height: calc(100vh - 65px);
+            }
+
+            .hide-mobile {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <nav class="side-nav">
+            <a href="index.html" class="nav-item"><i class="ph ph-chart-line"></i><span>CHART</span></a>
+            <a href="market.html" class="nav-item"><i class="ph ph-arrows-left-right"></i><span>MARKET</span></a>
+            <a href="profile.html" class="nav-item"><i class="ph ph-user"></i><span>PROFILE</span></a>
+            <a href="history.html" class="nav-item"><i
+                    class="ph ph-clock-counter-clockwise"></i><span>HISTORY</span></a>
+            <div class="nav-item" style="margin-top:auto" onclick="handleLogout()"><i
+                    class="ph ph-sign-out"></i><span>LOGOUT</span></div>
+        </nav>
+
+        <div class="main-content">
+            <div class="history-container">
+                <div class="history-header">
+                    <h2>Trade History</h2>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Asset</th>
+                                <th>Moving Balance</th>
+                                <th>Result (Profit)</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <nav class="mobile-nav">
+            <a href="index.html" class="nav-item"><i class="ph ph-chart-line"></i></a>
+            <a href="market.html" class="nav-item"><i class="ph ph-arrows-left-right"></i></a>
+            <a href="profile.html" class="nav-item"><i class="ph ph-user"></i></a>
+            <a href="history.html" class="nav-item"><i class="ph ph-clock-counter-clockwise"></i></a>
+            <div class="nav-item" onclick="handleLogout()"><i class="ph ph-sign-out"></i></div>
+        </nav>
+    </div>
+
+    <script type="module">
+        import { initNavigation } from './js/nav.js';
+        import { initHistoryPage } from './js/history.js';
+
+        initNavigation();
+        initHistoryPage();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Cryp-Chain</title>
+    <style>
+        body {
+            background: #0b1220;
+            color: #d7e6f3;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+
+        .panel {
+            padding: 30px;
+            border: 1px solid #7c5cff;
+            border-radius: 8px;
+            background: #0e1620;
+            max-width: 350px;
+        }
+
+        .btn {
+            background: #7c5cff;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="status-panel" class="panel">
+        <div id="loader">Checking System Integrity...</div>
+
+        <div id="not-supported" class="hidden">
+            <h3 style="color:#ef4444;">ACCESS DENIED</h3>
+            <p>Your browser does not support Service Workers. Secure trading is unavailable.</p>
+        </div>
+
+        <div id="notify-prompt" class="hidden">
+            <h3 style="color:#7c5cff;">SECURITY PROTOCOL</h3>
+            <p>Real-time trade notifications are mandatory for terminal access.</p>
+            <button id="enableBtn" class="btn">Enable Notifications</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+        import { SUPABASE_URL, SUPABASE_KEY, USER_TABLE } from './config.js';
+        import { requestNotificationPermission } from './chart/js/notifications.js';
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+
+        async function runSecurityCheck() {
+            // 1. Service Worker Check
+            if (!('serviceWorker' in navigator)) {
+                document.body.innerHTML = "Browser incompatible.";
+                return;
+            }
+            await navigator.serviceWorker.register('/sw.js');
+
+            // 2. Notification Check
+            if (Notification.permission !== 'granted') {
+                showEnableNotificationUI(); // Your custom button UI
+                return;
+            }
+
+            // 3. Login Check
+            const savedLoginId = localStorage.getItem('login_ID');
+            if (!savedLoginId) {
+                window.location.href = './login.html';
+                return;
+            }
+
+            // Get the actual UUID from DB to ensure we have it for the subscription link
+            const { data: user } = await supabase.from(USER_TABLE).select('uuid').eq('login_ID', savedLoginId).single();
+
+            if (user) {
+                // Force update the subscription in DB with the correct UUID
+                await requestNotificationPermission(user.uuid);
+                window.location.href = `./chart/index.html?user_id=${user.uuid}`;
+            } else {
+                window.location.href = './login.html';
+            }
+        }
+        runSecurityCheck();
+    </script>
+</body>
+
+</html>

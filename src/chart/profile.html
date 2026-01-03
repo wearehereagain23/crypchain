@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+    <title>Profile — Cryp-Chain</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="./css/nav.css">
+    <style>
+        :root {
+            --bg: #0b1220;
+            --panel: #0e1620;
+            --text: #d7e6f3;
+            --muted: #9aa4b2;
+            --accent: #7c5cff;
+            --glass: rgba(255, 255, 255, 0.03);
+            --nav-w: 72px;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app {
+            display: flex;
+            width: 100%;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .profile-card {
+            background: var(--panel);
+            border: 1px solid var(--glass);
+            border-radius: 16px;
+            max-width: 800px;
+            margin: 0 auto;
+            overflow: hidden;
+        }
+
+        .profile-header {
+            background: linear-gradient(to bottom, #162033, var(--panel));
+            padding: 40px 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--glass);
+        }
+
+        .profile-img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid var(--accent);
+            object-fit: cover;
+            margin-bottom: 15px;
+        }
+
+        .balance-banner {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1px;
+            background: var(--glass);
+            margin-top: 20px;
+        }
+
+        .stat-box {
+            background: var(--panel);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--muted);
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 5px;
+            color: var(--accent);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .info-label {
+            font-size: 11px;
+            color: var(--muted);
+            text-transform: uppercase;
+        }
+
+        .info-value {
+            font-size: 14px;
+            color: var(--text);
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--glass);
+        }
+
+        @media (max-width: 1024px) {
+            body {
+                flex-direction: column;
+            }
+
+            .main-content {
+                padding-bottom: 100px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <nav class="side-nav">
+            <a href="index.html" class="nav-item"><i class="ph ph-chart-line"></i><span>CHART</span></a>
+            <a href="market.html" class="nav-item"><i class="ph ph-arrows-left-right"></i><span>MARKET</span></a>
+            <a href="profile.html" class="nav-item"><i class="ph ph-user"></i><span>PROFILE</span></a>
+            <a href="history.html" class="nav-item"><i
+                    class="ph ph-clock-counter-clockwise"></i><span>HISTORY</span></a>
+            <div class="nav-item" style="margin-top:auto" onclick="handleLogout()"><i
+                    class="ph ph-sign-out"></i><span>LOGOUT</span></a>
+        </nav>
+
+        <div class="main-content">
+            <div class="profile-card">
+                <div class="profile-header">
+                    <img id="profileImg" src="./assets/image/profile.jpg" class="profile-img" alt="Profile">
+                    <h2 id="displayFullName" style="margin: 5px 0;">—</h2>
+                    <div id="displayEmail" style="color: var(--muted); font-size: 14px;">—</div>
+                </div>
+
+                <div class="balance-banner">
+                    <div class="stat-box">
+                        <div class="stat-label">Total Balance</div>
+                        <div id="displayBalance" class="stat-value">$0.00</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Account Level</div>
+                        <div id="displayLevel" class="stat-value">STARTER</div>
+                    </div>
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">First Name</div>
+                        <div id="infoFirstName" class="info-value">—</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Last Name</div>
+                        <div id="infoLastName" class="info-value">—</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Country</div>
+                        <div id="infoCountry" class="info-value">—</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">State</div>
+                        <div id="infoState" class="info-value">—</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Gender</div>
+                        <div id="infoGender" class="info-value">—</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Date of Birth</div>
+                        <div id="infoDOB" class="info-value">—</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Phone</div>
+                        <div id="infoPhone" class="info-value">—</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Currency</div>
+                        <div id="infoCurrency" class="info-value">—</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="mobile-nav">
+            <a href="index.html" class="nav-item"><i class="ph ph-chart-line"></i></a>
+            <a href="market.html" class="nav-item"><i class="ph ph-arrows-left-right"></i></a>
+            <a href="profile.html" class="nav-item"><i class="ph ph-user"></i></a>
+            <a href="history.html" class="nav-item"><i class="ph ph-clock-counter-clockwise"></i></a>
+            <div class="nav-item" onclick="handleLogout()"><i class="ph ph-sign-out"></i></div>
+        </nav>
+    </div>
+
+    <script type="module">
+        import { initNavigation } from './js/nav.js';
+        import { initProfilePage } from './js/profile.js';
+        initNavigation();
+        initProfilePage();
+    </script>
+</body>
+
+</html>

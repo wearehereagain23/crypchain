@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+    <title>Market — Cryp-Chain</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="./css/nav.css">
+    <style>
+        :root {
+            --bg: #0b1220;
+            --panel: #0e1620;
+            --muted: #9aa4b2;
+            --text: #d7e6f3;
+            --accent: #7c5cff;
+            --bull: #06d6a0;
+            --bear: #ff6b6b;
+            --glass: rgba(255, 255, 255, 0.03);
+            --nav-w: 72px;
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+
+        .app {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 20px;
+            overflow-y: auto;
+        }
+
+        .market-container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--panel);
+            border: 1px solid var(--glass);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .panel-header {
+            font-size: 11px;
+            color: var(--accent);
+            font-weight: bold;
+            margin-bottom: 24px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            text-align: center;
+            border-bottom: 1px solid var(--glass);
+            padding-bottom: 15px;
+        }
+
+        .market-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--glass);
+        }
+
+        .row-label {
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .row-value {
+            color: #fff;
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .level-badge {
+            background: rgba(124, 92, 255, 0.15);
+            color: var(--accent);
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: capitalize;
+            font-size: 12px;
+        }
+
+        .action-area {
+            margin-top: 24px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .primary-btn {
+            width: 100%;
+            background: var(--accent);
+            border: none;
+            padding: 16px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: 0.2s;
+            font-size: 14px;
+            order: 2;
+        }
+
+        .primary-btn:disabled {
+            background: #1a1f2b;
+            color: var(--muted);
+            cursor: not-allowed;
+            border: 1px solid var(--glass);
+            opacity: 1;
+        }
+
+        .ai-description {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(124, 92, 255, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(124, 92, 255, 0.1);
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.6;
+            order: 3;
+        }
+
+        #aiPendingStatus {
+            order: 1;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 1024px) {
+            .app {
+                flex-direction: column;
+            }
+
+            .main-content {
+                padding: 15px;
+                padding-bottom: 85px;
+                height: calc(100vh - 65px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <nav class="side-nav">
+            <a href="index.html" class="nav-item"><i class="ph ph-chart-line"></i><span>CHART</span></a>
+            <a href="market.html" class="nav-item active"><i class="ph ph-arrows-left-right"></i><span>MARKET</span></a>
+            <a href="profile.html" class="nav-item"><i class="ph ph-user"></i><span>PROFILE</span></a>
+            <a href="history.html" class="nav-item"><i
+                    class="ph ph-clock-counter-clockwise"></i><span>HISTORY</span></a>
+            <div class="nav-item" style="margin-top:auto" id="logoutBtn"><i
+                    class="ph ph-sign-out"></i><span>LOGOUT</span></div>
+        </nav>
+
+        <div class="main-content">
+            <div class="market-container">
+                <div class="panel-header">Market Operations</div>
+                <div class="market-row">
+                    <span class="row-label">Account Balance</span>
+                    <span class="row-value" id="marketBalance">--</span>
+                </div>
+                <div class="market-row">
+                    <span class="row-label">Account Level</span>
+                    <span id="marketLevel" class="level-badge">Loading...</span>
+                </div>
+
+                <div class="action-area">
+                    <div id="aiPendingStatus" style="display: none;">
+                        <div class="market-row" style="border-bottom-style: dashed; border-color: var(--accent);">
+                            <span class="row-label">Active Request</span>
+                            <span id="pendingAmt" class="row-value">--</span>
+                        </div>
+                        <div class="market-row" style="border-bottom-style: dashed; border-color: var(--accent);">
+                            <span class="row-label">Target Profit</span>
+                            <span id="pendingPct" class="row-value" style="color: var(--bull);">--</span>
+                        </div>
+                        <div class="market-row"
+                            style="background: rgba(124, 92, 255, 0.08); padding: 12px; margin-top: 5px;">
+                            <span class="row-label" style="color: #fff">Est. Total Sum</span>
+                            <span id="pendingTotal" class="row-value" style="color: #fff; font-size: 16px;">--</span>
+                        </div>
+                    </div>
+
+                    <button class="primary-btn" id="aiAssistBtn">
+                        <i class="ph ph-robot"></i> Trade with AI Assist
+                    </button>
+
+                    <div class="ai-description" id="aiDescription">
+                        <strong>About AI Assist:</strong> AI Assist is designed to mitigate risk and optimize capital
+                        growth. While market fluctuations may occur, the system is calibrated for a 90% terminal success
+                        rate. Please standby for secure system authorization to begin your assisted session.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="mobile-nav">
+            <a href="index.html" class="nav-item"><i class="ph ph-chart-line"></i></a>
+            <a href="market.html" class="nav-item active"><i class="ph ph-arrows-left-right"></i></a>
+            <a href="profile.html" class="nav-item"><i class="ph ph-user"></i></a>
+            <a href="history.html" class="nav-item"><i class="ph ph-clock-counter-clockwise"></i></a>
+            <div class="nav-item" id="mobileLogout"><i class="ph ph-sign-out"></i></div>
+        </nav>
+    </div>
+
+    <script type="module">
+        import { startMarket } from './js/market.js';
+        startMarket();
+        const logout = () => { localStorage.clear(); window.location.href = '../login.html'; };
+        document.getElementById('logoutBtn').onclick = logout;
+        document.getElementById('mobileLogout').onclick = logout;
+    </script>
+</body>
+
+</html>
