@@ -4,102 +4,205 @@
 <head>
     <meta charset="utf-8" />
     <title>Cryp-Chain</title>
+    <link rel="icon" href="./chart/assets/badge/logo2.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     <style>
+        :root {
+            --bg: #0b1220;
+            --accent: #7c5cff;
+            --glass: rgba(124, 92, 255, 0.05);
+        }
+
         body {
-            background: #0b1220;
-            color: #d7e6f3;
-            font-family: 'Courier New', monospace;
+            background: var(--bg);
+            color: #fff;
+            overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
             height: 100vh;
-            margin: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Background Glows */
+        .glow {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(124, 92, 255, 0.1) 0%, transparent 70%);
+            z-index: -1;
+        }
+
+        .logo-container {
             text-align: center;
         }
 
-        .panel {
-            padding: 30px;
-            border: 1px solid #7c5cff;
-            border-radius: 8px;
-            background: #0e1620;
-            max-width: 350px;
+        .main-logo {
+            width: 120px;
+            filter: drop-shadow(0 0 15px rgba(124, 92, 255, 0.5));
+            animation: pulseLogo 2s infinite ease-in-out;
         }
 
-        .btn {
-            background: #7c5cff;
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 15px;
+        .status-text {
+            margin-top: 20px;
+            font-size: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--accent);
+            opacity: 0.7;
         }
 
-        .hidden {
-            display: none;
+        /* Notification Overlay */
+        #notify-prompt {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(11, 18, 32, 0.8);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 24px;
+            text-align: center;
+            max-width: 400px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        @keyframes pulseLogo {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            50% {
+                transform: scale(1.05);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
         }
     </style>
 </head>
 
 <body>
-    <div id="status-panel" class="panel">
-        <div id="loader">Checking System Integrity...</div>
 
-        <div id="not-supported" class="hidden">
-            <h3 style="color:#ef4444;">ACCESS DENIED</h3>
-            <p>Your browser does not support Service Workers. Secure trading is unavailable.</p>
+    <body>
+        <div class="glow"></div>
+        <div class="logo-container">
+            <img src="./chart/assets/badge/logo.png" class="main-logo" alt="Logo">
+            <div class="status-text" id="loader">Establishing Encrypted Tunnel...</div>
         </div>
 
-        <div id="notify-prompt" class="hidden">
-            <h3 style="color:#7c5cff;">SECURITY PROTOCOL</h3>
-            <p>Real-time trade notifications are mandatory for terminal access.</p>
-            <button id="enableBtn" class="btn">Enable Notifications</button>
+        <div id="notify-prompt" class="hidden animate__animated animate__fadeIn">
+            <div class="glass-card">
+                <h2 style="color: var(--accent); margin-bottom: 10px;">Getting Stared</h2>
+                <p style="font-size: 14px; color: #9aa4b2; margin-bottom: 30px;">
+                    Cryp-Chain requires real-time signal authorization. Please enable notifications to synchronize with
+                    the trading terminal.
+                </p>
+                <button class="btn" id="enableBtn" style="width: 100%; padding: 15px;">AUTHORIZE TERMINAL</button>
+            </div>
         </div>
-    </div>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script type="module">
+            import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+            import { SUPABASE_URL, SUPABASE_KEY, USER_TABLE } from './config.js';
+            import { requestNotificationPermission } from './chart/js/notifications.js';
 
-    <script type="module">
-        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-        import { SUPABASE_URL, SUPABASE_KEY, USER_TABLE } from './config.js';
-        import { requestNotificationPermission } from './chart/js/notifications.js';
+            const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+            // FIX: Instead of innerHTML, we toggle the visibility of the high-design overlay
+            function showEnableNotificationUI() {
+                const loader = document.getElementById('loader');
+                const prompt = document.getElementById('notify-prompt');
 
+                if (loader) loader.style.display = 'none';
+                if (prompt) {
+                    prompt.classList.remove('hidden');
+                    prompt.style.display = 'flex';
+                }
 
-        async function runSecurityCheck() {
-            // 1. Service Worker Check
-            if (!('serviceWorker' in navigator)) {
-                document.body.innerHTML = "Browser incompatible.";
-                return;
+                const enableBtn = document.getElementById('enableBtn');
+                enableBtn.onclick = async () => {
+                    enableBtn.disabled = true;
+                    enableBtn.innerText = "AUTHORIZING...";
+
+                    try {
+                        const granted = await requestNotificationPermission();
+                        if (granted === true || Notification.permission === 'granted') {
+                            location.reload();
+                        } else {
+                            throw new Error("Permission Denied");
+                        }
+                    } catch (err) {
+                        Swal.fire({
+                            title: 'Security Handshake Failed',
+                            text: 'Notifications must be enabled to synchronize with the trading terminal.',
+                            icon: 'warning',
+                            confirmButtonColor: '#7c5cff',
+                            background: '#0e1620',
+                            color: '#d7e6f3'
+                        });
+                        enableBtn.disabled = false;
+                        enableBtn.innerText = "AUTHORIZE TERMINAL";
+                    }
+                };
             }
-            await navigator.serviceWorker.register('/sw.js');
 
-            // 2. Notification Check
-            if (Notification.permission !== 'granted') {
-                showEnableNotificationUI(); // Your custom button UI
-                return;
+            async function runSecurityCheck() {
+                // 1. Service Worker Check
+                if (!('serviceWorker' in navigator)) {
+                    document.body.innerHTML = "<div class='status-text'>Browser incompatible. Please use Chrome/Edge.</div>";
+                    return;
+                }
+
+                try {
+                    await navigator.serviceWorker.register('/sw.js');
+                } catch (e) {
+                    console.error("SW Registration failed", e);
+                }
+
+                // 2. Notification Check
+                if (Notification.permission !== 'granted') {
+                    showEnableNotificationUI();
+                    return;
+                }
+
+                // 3. Session Verification
+                const savedLoginId = localStorage.getItem('login_ID');
+                if (!savedLoginId) {
+                    setTimeout(() => window.location.href = './login.html', 1200);
+                    return;
+                }
+
+                const { data: user, error } = await supabase
+                    .from(USER_TABLE)
+                    .select('uuid')
+                    .eq('login_ID', savedLoginId)
+                    .single();
+
+                if (user) {
+                    await requestNotificationPermission(user.uuid);
+                    window.location.href = `./chart/index.html?user_id=${user.uuid}`;
+                } else {
+                    window.location.href = './login.html';
+                }
             }
 
-            // 3. Login Check
-            const savedLoginId = localStorage.getItem('login_ID');
-            if (!savedLoginId) {
-                window.location.href = './login.html';
-                return;
-            }
-
-            // Get the actual UUID from DB to ensure we have it for the subscription link
-            const { data: user } = await supabase.from(USER_TABLE).select('uuid').eq('login_ID', savedLoginId).single();
-
-            if (user) {
-                // Force update the subscription in DB with the correct UUID
-                await requestNotificationPermission(user.uuid);
-                window.location.href = `./chart/index.html?user_id=${user.uuid}`;
-            } else {
-                window.location.href = './login.html';
-            }
-        }
-        runSecurityCheck();
-    </script>
-</body>
+            runSecurityCheck();
+        </script>
+    </body>
 
 </html>

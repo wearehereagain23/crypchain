@@ -34,14 +34,21 @@ export async function requestNotificationPermission(forcedUuid = null) {
  * Security Guard: Called frequently inside the chart page.
  */
 export async function checkSecurityIntegrity() {
+    console.log("[DEBUG] Checking System Integrity...");
+
     if (Notification.permission !== 'granted') {
-        const subData = localStorage.getItem('last_subscription');
-        if (subData) {
-            // Delete sub from DB if they revoked permission
-            await supabase.from('user_subscriptions').delete().eq('subscription_data', subData);
-        }
+        console.warn("[SECURITY] Notification permission revoked.");
         localStorage.clear();
-        window.location.href = '../index.html';
+        // Use an absolute path to the root to avoid ../ issues on different pages
+        window.location.href = window.location.origin + '/index.html';
+        return;
+    }
+
+    // Check if the Supabase session is actually alive
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session && localStorage.getItem('login_ID')) {
+        console.log("[SECURITY] Session lost. Redirecting...");
+        // Handle session loss here if needed
     }
 }
 
