@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Cryp Chain | Terminal Deployment</title>
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#01123c" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/crypchain.png" />
+    <link rel="icon" type="image/png" href="/crypchain.png">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <style>
+        :root {
+            --brand-blue: #2196f3;
+            --deep-navy: #01123c;
+            --accent-cyan: #00d4ff;
+            --text-main: #ffffff;
+            --text-dim: rgba(255, 255, 255, 0.6);
+        }
+
+        /* FIXED HEADER SHIELD: This stops content from showing behind the battery/wifi icons */
+        .ios-status-shield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: env(safe-area-inset-top);
+            background: var(--deep-navy);
+            z-index: 2000;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--deep-navy);
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .bg-mesh {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                radial-gradient(circle at 20% 30%, rgba(33, 150, 243, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(0, 212, 255, 0.1) 0%, transparent 40%);
+            z-index: -1;
+        }
+
+        .container {
+            width: 85%;
+            max-width: 400px;
+            text-align: center;
+            padding-top: env(safe-area-inset-top);
+            /* Respects the notch area */
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .logo-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 30px;
+        }
+
+        .logo-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 140%;
+            height: 140%;
+            background: var(--brand-blue);
+            filter: blur(50px);
+            opacity: 0.3;
+            z-index: -1;
+        }
+
+        .logo {
+            width: 100px;
+            height: auto;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            font-weight: 800;
+        }
+
+        p {
+            color: var(--text-dim);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 45px;
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 22px;
+            background: linear-gradient(135deg, var(--brand-blue), var(--accent-cyan));
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            box-shadow: 0 15px 35px rgba(33, 150, 243, 0.3);
+        }
+
+        #ios-guide {
+            display: none;
+            position: fixed;
+            bottom: calc(30px + env(safe-area-inset-bottom));
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 360px;
+            background: #fff;
+            color: #01123c;
+            padding: 24px;
+            border-radius: 28px;
+            z-index: 3000;
+            text-align: center;
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.4);
+            animation: slideUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #ios-guide::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-top: 12px solid #fff;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translate(-50%, 120%);
+            }
+
+            to {
+                transform: translate(-50%, 0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="ios-status-shield"></div>
+    <div class="bg-mesh"></div>
+
+    <div class="container" id="app-view">
+        <div class="logo-wrapper">
+            <img src="./crypchain.png" class="logo" alt="Cryp Chain Logo">
+        </div>
+        <h1>Cryp Chain</h1>
+        <p>Deploy the secure trading terminal directly to your home screen for instant market access.</p>
+        <button id="main-btn" class="action-btn">Install Terminal</button>
+    </div>
+
+    <div id="ios-guide">
+        <div style="font-weight: 800; margin-bottom: 10px; font-size: 1.1rem;">FINAL STEP</div>
+        <div style="font-size: 1rem; line-height: 1.6; color: #333;">
+            Tap the
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin: 0 5px;">
+                <path d="M12 15V3M12 3L8 7M12 3L16 7" stroke="#2196f3" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" />
+                <path d="M9 11H5V21H19V11H15" stroke="#2196f3" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" />
+            </svg>
+            button below,<br>
+            then select <b>"Add to Home Screen"</b>
+        </div>
+    </div>
+
+    <script>
+        const btn = document.getElementById('main-btn');
+        const iosGuide = document.getElementById('ios-guide');
+        let deferredPrompt;
+
+        // --- ENHANCED DEVICE CHECKS ---
+        const isIos = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+        // Simple Desktop Check
+        const isDesktop = !(/Mobi|Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+
+        function navigate() {
+            window.location.replace("./index.html");
+        }
+
+        // REDIRECT LOGIC: Redirect if already on desktop or already installed
+        if (isDesktop || isStandalone) {
+            navigate();
+        }
+
+        // ANDROID / CHROME INSTALL CAPTURE
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            btn.innerText = "Install Now";
+        });
+
+        // ACTION BUTTON LOGIC
+        btn.addEventListener('click', async () => {
+            if (isIos) {
+                // Path for iPhone
+                iosGuide.style.display = 'block';
+                btn.innerText = "Complete Below";
+                btn.style.opacity = '0.5';
+                btn.style.pointerEvents = 'none';
+            } else if (deferredPrompt) {
+                // Path for Android/Chrome
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') navigate();
+                deferredPrompt = null;
+            } else {
+                // Fallback for browsers that don't support PWA prompts
+                navigate();
+            }
+        });
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js');
+        }
+    </script>
+</body>
+
+</html>
