@@ -8,6 +8,10 @@ import { updateWatchData, refreshWatchUI, renderWatchlist } from './watchlist.js
 
 let socket = null;
 
+/**
+ * FULL REWRITE: initChart
+ * Optimized for Render (Free Tier) + PWA Reconnection logic.
+ */
 export async function initChart(canvasId) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
@@ -16,26 +20,37 @@ export async function initChart(canvasId) {
     DRAW.fitCanvas(canvas);
     DRAW.setupCanvasEvents(canvas);
 
-    // Initialize Socket
-    socket = io();
+    // 1. Initialize Socket with Reconnection Settings
+    // We add reconnection delay to prevent overwhelming the Render server
+    socket = io({
+        reconnection: true,
+        reconnectionAttempts: Infinity,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 20000
+    });
 
-    // 1. Initial Sync: Setup the chart memory
+    // 2. Initial Sync & Re-Sync Logic
+    // This event fires on the first load AND every successful reconnection
     socket.on('initial_sync', (data) => {
         if (!data || !data.history || !data.market) {
-            console.error("[DEBUG] initial_sync: Missing data from server.");
+            console.error("[DEBUG] Sync Error: Data packet incomplete.");
             return;
         }
 
+        console.log(`[DEBUG] Terminal Synced. History: ${Object.keys(data.history).length} assets.`);
         STATE.setConfig(data.settings);
 
         Object.keys(data.history).forEach(sym => {
             const stateRef = STATE.ensureSymbolData(sym);
-            // Ensure we only keep the last 150
+
+            // Sync history cache (limit to last 150 candles)
             stateRef.candles = [...data.history[sym]].slice(-150);
 
             const m = data.market[sym];
             if (m) {
                 updateWatchData(sym, m.price, m.open);
+                // If this is the asset we are currently viewing, update the active state
                 if (sym === STATE.activeSymbol) {
                     STATE.syncFromSocket(m, m.candleStartTime);
                 }
@@ -44,10 +59,10 @@ export async function initChart(canvasId) {
 
         STATE.setLoaded(true);
         refreshWatchUI();
-        DRAW.scheduleDraw();
+        DRAW.scheduleDraw(); // Trigger a redraw now that we have data
     });
 
-    // 2. Ticks: The "Live" price movement
+    // 3. Ticks: Real-time price updates
     socket.on('tick', (payload) => {
         if (!STATE.isLoaded || !payload.market) return;
 
@@ -55,7 +70,6 @@ export async function initChart(canvasId) {
             const m = payload.market[sym];
             updateWatchData(sym, m.price, m.open);
 
-            // Only update the active chart's drawing state
             if (sym === STATE.activeSymbol) {
                 STATE.syncFromSocket(m, m.candleStartTime);
             }
@@ -65,13 +79,26 @@ export async function initChart(canvasId) {
         DRAW.scheduleDraw();
     });
 
-    // 3. New Candle: Finalizing a period
+    // 4. New Candle: Finalizing the 1m/5m period
     socket.on('start_new_simulation', (payload) => {
         if (!STATE.isLoaded || !payload.confirmedCandle) return;
 
-        console.log(`[DEBUG] Period closed for ${payload.symbol}`);
+        console.log(`[DEBUG] Period Closed: ${payload.symbol}`);
         STATE.commitOfficialCandle(payload.confirmedCandle);
         DRAW.scheduleDraw();
+    });
+
+    // 5. Connection Status Monitoring (Optional but recommended for PWAs)
+    socket.on('disconnect', (reason) => {
+        console.warn(`[DEBUG] Connection Lost: ${reason}`);
+        // Render free tier might disconnect you if inactive; UptimeRobot helps prevent this.
+        if (reason === "io server disconnect") {
+            socket.connect();
+        }
+    });
+
+    socket.on('reconnect_attempt', () => {
+        console.log("[DEBUG] Attempting to reconnect to Terminal Engine...");
     });
 }
 
