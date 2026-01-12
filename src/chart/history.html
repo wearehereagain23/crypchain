@@ -27,27 +27,18 @@
 
         html,
         body {
-            height: 100%;
             margin: 0;
             background: var(--bg);
             color: var(--text);
             font-family: 'Inter', sans-serif;
-            overflow: hidden;
         }
 
         .app {
             display: flex;
-            height: 100vh;
             width: 100vw;
         }
 
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 24px;
-            overflow: hidden;
-        }
+
 
         .history-container {
             background: var(--panel);
@@ -55,8 +46,6 @@
             border-radius: 12px;
             display: flex;
             flex-direction: column;
-            height: 100%;
-            overflow: hidden;
         }
 
         .history-header {
@@ -115,11 +104,6 @@
                 flex-direction: column;
             }
 
-            .main-content {
-                padding: 12px;
-                padding-bottom: 75px;
-                height: calc(100vh - 65px);
-            }
 
             .hide-mobile {
                 display: none;

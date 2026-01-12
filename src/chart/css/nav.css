@@ -1,99 +1,84 @@
-/* --- SHARED NAV SETTINGS --- */
-:root {
-    --nav-w: 72px;
+/* --- GLOBAL LAYOUT FIXES --- */
+html,
+body {
+    height: 100dvh;
+    color: white;
+    /* Dynamic viewport for iOS */
+    margin: 0;
+    padding: 0;
+    background: #0b1220;
+    overflow: hidden;
+    /* Lock the body to prevent scrolling fights */
+    position: fixed;
+    /* Stop iOS rubber-banding */
+    width: 100%;
 }
 
-/* 1. DESKTOP VIEW (PC) */
-.side-nav {
-    width: var(--nav-w);
-    background: var(--panel);
-    border-right: 1px solid var(--glass);
+.app {
     display: flex;
-    /* Shown on PC */
-    flex-direction: column;
-    align-items: center;
-    padding: 24px 0;
-    gap: 28px;
-    flex-shrink: 0;
-    height: 100vh;
+    flex-direction: row;
+    height: 100dvh;
+    width: 100vw;
+    padding-top: env(safe-area-inset-top);
+    /* Clear battery/notch */
+    box-sizing: border-box;
 }
 
-.mobile-nav {
-    display: none !important;
-    /* STRICTLY HIDDEN ON PC */
+/* --- THE ONLY SCROLLING AREA --- */
+.main-content {
+    flex: 1;
+    overflow-y: auto !important;
+    /* Enable scrolling only here */
+    -webkit-overflow-scrolling: touch;
+    padding: 12px;
+    padding-bottom: 120px !important;
+    /* Clear floating nav */
 }
 
-/* 2. MOBILE VIEW (Media Query) */
+/* --- MOBILE NAVIGATION --- */
 @media (max-width: 1024px) {
+    .app {
+        flex-direction: column;
+    }
+
     .side-nav {
         display: none !important;
-        /* HIDE SIDEBAR ON MOBILE */
     }
 
     .mobile-nav {
-        position: fixed !important;
-        /* Anchors it to the bottom safe area exactly */
-        bottom: calc(10px + env(safe-area-inset-bottom)) !important;
-        left: 12px !important;
-        right: 12px !important;
-        height: 65px !important;
-
-        background: rgba(14, 22, 32, 0.9) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 20px !important;
         display: flex !important;
-        justify-content: space-around !important;
-        align-items: center !important;
+        position: fixed !important;
+        bottom: calc(5px + env(safe-area-inset-bottom)) !important;
+        /* Relaxes at bottom */
+        left: 15px;
+        right: 15px;
+        height: 65px;
+        background: rgba(14, 22, 32, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        justify-content: space-around;
+        align-items: center;
+        z-index: 999999;
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
-        z-index: 99999;
-    }
-
-    /* Pushes content up so the floating bar doesn't cover data */
-    .main-content {
-        padding-bottom: 110px !important;
-        height: auto !important;
-        overflow-y: auto !important;
     }
 }
 
-/* --- NAV ITEMS (Universal Styling) --- */
 .nav-item {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    color: var(--muted) !important;
-    text-decoration: none !important;
-    font-size: 10px !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #9aa4b2;
+    text-decoration: none;
 }
 
-.nav-item i {
-    font-size: 20px !important;
-    margin-bottom: 3px;
+.nav-item.active {
+    color: #7c5cff !important;
 }
 
 .nav-item span {
     font-size: 9px;
     font-weight: 700;
-    margin-top: 4px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    display: block;
-    /* Ensure visibility */
-}
-
-/* --- ACTIVE STATE --- */
-.nav-item.active {
-    color: var(--accent) !important;
-}
-
-.nav-item.active i {
-    transform: translateY(-3px);
-    /* Subtle lift for the selected icon */
-    filter: drop-shadow(0 0 8px var(--accent));
-    /* Glow effect */
-}
-
-.nav-item.active span {
-    opacity: 1;
+    margin-top: 4px;
 }
