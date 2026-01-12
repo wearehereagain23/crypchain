@@ -34,21 +34,32 @@
             background: var(--bg);
             color: var(--text);
             font-family: 'Inter', sans-serif;
+            /* Prevent the whole page from bouncing/scrolling */
             overflow: hidden;
+            position: fixed;
+            width: 100%;
         }
 
         .app {
             display: flex;
-            height: 100vh;
+            /* Use dvh to account for browser toolbars and iOS bars */
+            height: 100dvh;
             width: 100vw;
+            flex-direction: column;
+            /* This is the magic for iOS notches */
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            box-sizing: border-box;
         }
 
-        /* --- MAIN LAYOUT ENGINE --- */
+        /* Ensure the main content scrolls independently without pushing the nav */
         .main-content {
             flex: 1;
-            display: flex;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
             padding: 12px;
-            overflow: hidden;
+            /* Increased bottom padding to ensure content clears the floating nav */
+            padding-bottom: 100px;
         }
 
         .layout {

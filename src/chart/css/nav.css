@@ -31,22 +31,22 @@
     }
 
     .mobile-nav {
-        display: flex !important;
-        /* SHOW MOBILE NAV */
         position: fixed !important;
-        bottom: calc(15px + env(safe-area-inset-bottom)) !important;
-        left: 12px;
-        right: 12px;
-        height: 70px;
-        background: var(--panel);
-        border: 1px solid var(--glass);
-        border-radius: 22px;
-        justify-content: space-around;
-        align-items: center;
+        /* Anchors it to the bottom safe area exactly */
+        bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+        left: 12px !important;
+        right: 12px !important;
+        height: 65px !important;
+
+        background: rgba(14, 22, 32, 0.9) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 20px !important;
+        display: flex !important;
+        justify-content: space-around !important;
+        align-items: center !important;
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
-        z-index: 999999;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+        z-index: 99999;
     }
 
     /* Pushes content up so the floating bar doesn't cover data */
@@ -59,20 +59,17 @@
 
 /* --- NAV ITEMS (Universal Styling) --- */
 .nav-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: var(--muted);
-    text-decoration: none;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    color: var(--muted) !important;
+    text-decoration: none !important;
+    font-size: 10px !important;
 }
 
 .nav-item i {
-    font-size: 24px;
-    transition: transform 0.2s ease;
+    font-size: 20px !important;
+    margin-bottom: 3px;
 }
 
 .nav-item span {
