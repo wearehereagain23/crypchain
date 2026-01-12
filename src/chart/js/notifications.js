@@ -40,38 +40,34 @@ export async function requestNotificationPermission(forcedUuid = null) {
  * This runs every time a page loads and on a loop while the user is active.
  */
 export async function checkSecurityIntegrity() {
-    console.log("[SECURITY] Verifying System Integrity...");
-
-    // 1. Detect if Notification permission was revoked
-    if (Notification.permission !== 'granted') {
-        console.error("[SECURITY] Access Revoked: Notifications Required.");
-
-        // Immediate Logout Logic
-        localStorage.clear();
-        sessionStorage.clear();
-
-        // Use window.location.origin to ensure we go to the very first landing page
-        // which contains the "Authorize Terminal" prompt we created.
-        window.location.href = window.location.origin + '/index.html?auth_error=notifications_required';
+    // 1. SAFETY: Don't run the check if we are already on the index/login page
+    // This prevents the "Logout Loop"
+    if (window.location.pathname.includes('index.html') || window.location.pathname === '/') {
         return;
     }
 
-    // 2. Detect if the user's login session is still valid in Supabase
+    console.log("[SECURITY] Verifying System Integrity...");
+
+    // 2. Permission Check
+    if (Notification.permission !== 'granted') {
+        console.warn("[SECURITY] Access Revoked.");
+        localStorage.clear();
+        // Redirect back to the authorization page
+        window.location.href = window.location.origin + '/index.html';
+        return;
+    }
+
+    // 3. Session Check with Network Safety
     try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error || !session) {
-            // If the user has a login_ID in storage but no session, they timed out
-            if (localStorage.getItem('login_ID')) {
-                console.warn("[SECURITY] Session expired.");
-                localStorage.clear();
-                window.location.href = window.location.origin + '/login.html';
-            }
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session && localStorage.getItem('login_ID')) {
+            localStorage.clear();
+            window.location.href = window.location.origin + '/login.html';
         }
     } catch (e) {
-        console.warn("[SECURITY] Network offline, skipping session check.");
+        // Ignore network glitches so we don't log out users on weak Wi-Fi
     }
 }
-
 /**
  * Helper: Converts VAPID key for the browser
  */

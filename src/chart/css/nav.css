@@ -1,101 +1,102 @@
-/* --- NAVIGATION LAYOUT --- */
+/* --- SHARED NAV SETTINGS --- */
 :root {
-    /* Adjusted for a more balanced feel on mobile */
-    --nav-item-active: var(--accent);
-    --nav-item-muted: var(--muted);
+    --nav-w: 72px;
 }
 
+/* 1. DESKTOP VIEW (PC) */
 .side-nav {
     width: var(--nav-w);
     background: var(--panel);
     border-right: 1px solid var(--glass);
     display: flex;
+    /* Shown on PC */
     flex-direction: column;
     align-items: center;
     padding: 24px 0;
     gap: 28px;
     flex-shrink: 0;
+    height: 100vh;
 }
 
 .mobile-nav {
-    position: fixed;
-    /* Increased spacing from bottom for iOS Home Indicator */
-    bottom: max(15px, env(safe-area-inset-bottom));
-    left: 12px;
-    right: 12px;
-    height: 70px;
-    /* Slightly taller for text labels */
-    background: var(--panel);
-    border: 1px solid var(--glass);
-    border-radius: 22px;
-    display: none;
-    /* Hidden by default, shown in media query */
-    justify-content: space-around;
-    align-items: center;
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    z-index: 1000;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-    /* Prevent content from being cut off by the rounded corners */
-    padding: 0 10px;
+    display: none !important;
+    /* STRICTLY HIDDEN ON PC */
 }
 
-/* --- NAV ITEMS --- */
+/* 2. MOBILE VIEW (Media Query) */
+@media (max-width: 1024px) {
+    .side-nav {
+        display: none !important;
+        /* HIDE SIDEBAR ON MOBILE */
+    }
+
+    .mobile-nav {
+        display: flex !important;
+        /* SHOW MOBILE NAV */
+        position: fixed !important;
+        bottom: calc(15px + env(safe-area-inset-bottom)) !important;
+        left: 12px;
+        right: 12px;
+        height: 70px;
+        background: var(--panel);
+        border: 1px solid var(--glass);
+        border-radius: 22px;
+        justify-content: space-around;
+        align-items: center;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        z-index: 999999;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Pushes content up so the floating bar doesn't cover data */
+    .main-content {
+        padding-bottom: 110px !important;
+        height: auto !important;
+        overflow-y: auto !important;
+    }
+}
+
+/* --- NAV ITEMS (Universal Styling) --- */
 .nav-item {
-    color: var(--nav-item-muted);
-    text-decoration: none;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    flex: 1;
-    transition: all 0.2s ease-in-out;
+    color: var(--muted);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
     -webkit-tap-highlight-color: transparent;
 }
 
 .nav-item i {
-    font-size: 22px;
-    /* Balanced icon size */
+    font-size: 24px;
     transition: transform 0.2s ease;
 }
 
 .nav-item span {
-    font-size: 10px;
-    /* Slightly larger for readability */
+    font-size: 9px;
+    font-weight: 700;
     margin-top: 4px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
     text-transform: uppercase;
-    opacity: 0.8;
+    letter-spacing: 0.5px;
+    display: block;
+    /* Ensure visibility */
 }
 
-/* --- ACTIVE & HOVER STATES --- */
-.nav-item.active,
-.nav-item:hover {
-    color: var(--nav-item-active);
+/* --- ACTIVE STATE --- */
+.nav-item.active {
+    color: var(--accent) !important;
 }
 
 .nav-item.active i {
-    transform: translateY(-2px);
-    /* Subtle lift for active item */
+    transform: translateY(-3px);
+    /* Subtle lift for the selected icon */
+    filter: drop-shadow(0 0 8px var(--accent));
+    /* Glow effect */
 }
 
 .nav-item.active span {
     opacity: 1;
-}
-
-/* --- RESPONSIVE TOGGLE --- */
-@media (max-width: 1024px) {
-    .side-nav {
-        display: none;
-    }
-
-    .mobile-nav {
-        display: flex;
-    }
-
-    /* Ensure the main container has room for the floating nav */
-    .main-content {
-        padding-bottom: 100px !important;
-    }
 }
