@@ -95,6 +95,38 @@
                 opacity: 0.8;
             }
         }
+
+        /* Fix for the tiny button on iOS */
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 16px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+
+            /* CRITICAL FOR MOBILE: Minimum height of 60px for thumbs */
+            min-height: 60px;
+            width: 100%;
+            margin-top: 25px;
+            padding: 15px 30px !important;
+
+            /* Prevents default iOS zooming/tapping behaviors */
+            touch-action: manipulation;
+            box-shadow: 0 10px 20px rgba(124, 92, 255, 0.3);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+            opacity: 0.9;
+        }
+
+        .hidden {
+            display: none !important;
+        }
     </style>
 </head>
 
@@ -119,46 +151,40 @@
         </div>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script type="module">
-            import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-            import { SUPABASE_URL, SUPABASE_KEY, USER_TABLE } from './config.js';
-            import { requestNotificationPermission } from './chart/js/notifications.js';
+            // Use your existing client to keep connection settings consistent
+            import { supabase } from './chart/js/chart.supabase.js';
+            import { USER_TABLE } from './config.js';
 
-            const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-            // FIX: Instead of innerHTML, we toggle the visibility of the high-design overlay
-            function showEnableNotificationUI() {
-                const loader = document.getElementById('loader');
+            // Toggle the visibility of the authorization overlay
+            async function showEnableNotificationUI() {
                 const prompt = document.getElementById('notify-prompt');
+                const enableBtn = document.getElementById('enableBtn');
 
-                if (loader) loader.style.display = 'none';
                 if (prompt) {
                     prompt.classList.remove('hidden');
                     prompt.style.display = 'flex';
                 }
 
-                const enableBtn = document.getElementById('enableBtn');
                 enableBtn.onclick = async () => {
+                    // Disable button to prevent double-taps on iOS
                     enableBtn.disabled = true;
                     enableBtn.innerText = "AUTHORIZING...";
 
-                    try {
-                        const granted = await requestNotificationPermission();
-                        if (granted === true || Notification.permission === 'granted') {
-                            location.reload();
-                        } else {
-                            throw new Error("Permission Denied");
-                        }
-                    } catch (err) {
-                        Swal.fire({
-                            title: 'Security Handshake Failed',
-                            text: 'Notifications must be enabled to synchronize with the trading terminal.',
-                            icon: 'warning',
-                            confirmButtonColor: '#7c5cff',
-                            background: '#0e1620',
-                            color: '#d7e6f3'
-                        });
+                    const permission = await Notification.requestPermission();
+
+                    if (permission === 'granted') {
+                        window.location.href = './login.html';
+                    } else {
                         enableBtn.disabled = false;
-                        enableBtn.innerText = "AUTHORIZE TERMINAL";
+                        enableBtn.innerText = "ENABLE TERMINAL";
+                        Swal.fire({
+                            title: 'Access Denied',
+                            text: 'System authorization requires notification permissions.',
+                            icon: 'warning',
+                            background: '#0e1620',
+                            color: '#fff',
+                            confirmButtonColor: '#7c5cff'
+                        });
                     }
                 };
             }
@@ -166,44 +192,28 @@
             async function runSecurityCheck() {
                 // 1. Service Worker Check
                 if (!('serviceWorker' in navigator)) {
-                    document.body.innerHTML = "<div class='status-text'>Browser incompatible. Please use Chrome/Edge.</div>";
+                    document.body.innerHTML = "<div class='status-text'>Browser Incompatible</div>";
                     return;
                 }
 
                 try {
                     await navigator.serviceWorker.register('/sw.js');
                 } catch (e) {
-                    console.error("SW Registration failed", e);
+                    console.warn("SW Registration delay:", e);
                 }
 
-                // 2. Notification Check
+                // 2. Gatekeeper Logic
                 if (Notification.permission !== 'granted') {
                     showEnableNotificationUI();
-                    return;
-                }
-
-                // 3. Session Verification
-                const savedLoginId = localStorage.getItem('login_ID');
-                if (!savedLoginId) {
-                    setTimeout(() => window.location.href = './login.html', 1200);
-                    return;
-                }
-
-                const { data: user, error } = await supabase
-                    .from(USER_TABLE)
-                    .select('uuid')
-                    .eq('login_ID', savedLoginId)
-                    .single();
-
-                if (user) {
-                    await requestNotificationPermission(user.uuid);
-                    window.location.href = `./chart/index.html?user_id=${user.uuid}`;
                 } else {
+                    // If permission is already granted, we don't need the splash.
+                    // Go straight to login to identify the user.
                     window.location.href = './login.html';
                 }
             }
 
-            runSecurityCheck();
+            // Initialize on load
+            window.addEventListener('DOMContentLoaded', runSecurityCheck);
         </script>
     </body>
 

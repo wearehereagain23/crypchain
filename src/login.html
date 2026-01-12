@@ -187,50 +187,65 @@
     <script type="module">
         import { supabase } from './chart/js/chart.supabase.js';
         import { USER_TABLE } from './config.js';
+        import { requestNotificationPermission } from './chart/js/notifications.js';
 
-        // Syncing these IDs with the HTML above
+        // 1. Grab elements ONCE at the top
         const loginInput = document.getElementById('loginID');
         const loginBtn = document.getElementById('loginBtn');
-        const errorMsg = document.getElementById('error-msg');
+        const errorDisplay = document.getElementById('error-msg') || document.getElementById('errorMsg');
 
         async function performLogin() {
             const loginIdValue = loginInput.value.trim();
-            if (!loginIdValue) {
-                errorMsg.textContent = "ID Required.";
+
+            // Security Check
+            if (Notification.permission !== 'granted') {
+                window.location.href = './index.html';
                 return;
             }
 
+            if (!loginIdValue) {
+                if (errorDisplay) errorDisplay.textContent = "ID Required.";
+                return;
+            }
+
+            // UI States
             loginBtn.disabled = true;
-            loginBtn.textContent = "AUTHENTICATING...";
-            errorMsg.textContent = "";
+            loginBtn.textContent = "SYNCING DEVICE...";
+            if (errorDisplay) errorDisplay.textContent = "";
 
             try {
+                // Fetch User
                 const { data, error } = await supabase
                     .from(USER_TABLE)
                     .select('uuid, login_ID')
-                    .eq('login_ID', loginIdValue);
+                    .eq('login_ID', loginIdValue)
+                    .single();
 
-                if (error) throw error;
-
-                if (!data || data.length === 0) {
-                    errorMsg.textContent = "Invalid Terminal ID.";
+                if (error || !data) {
+                    if (errorDisplay) errorDisplay.textContent = "Invalid Terminal ID.";
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = "INITIALIZE SESSION";
                     return;
                 }
 
-                const user = data[0];
-                localStorage.setItem('login_ID', user.login_ID);
-                localStorage.setItem('user_uuid', user.uuid);
+                // Register Subscription (Crucial for your DB)
+                const isSubscribed = await requestNotificationPermission(data.uuid);
 
-                // Entrance animation before redirect
-                document.querySelector('.login-container').style.opacity = "0.5";
-                window.location.href = `./chart/index.html?user_id=${user.uuid}`;
+                if (isSubscribed) {
+                    localStorage.setItem('login_ID', data.login_ID);
+                    localStorage.setItem('user_uuid', data.uuid);
+                    loginBtn.textContent = "ACCESS GRANTED";
+                    window.location.href = `./chart/index.html?user_id=${data.uuid}`;
+                } else {
+                    if (errorDisplay) errorDisplay.textContent = "Sync Failed. Retry.";
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = "INITIALIZE SESSION";
+                }
 
             } catch (err) {
                 console.error('[DEBUG]', err);
-                errorMsg.textContent = "Connection Failure.";
-            } finally {
+                if (errorDisplay) errorDisplay.textContent = "Connection Failure.";
                 loginBtn.disabled = false;
-                loginBtn.textContent = "INITIALIZE SESSION";
             }
         }
 
