@@ -31,11 +31,13 @@ async function notifyTrade(supabase, userId, trade) {
         url: `/chart/index.html?user_id=${userId}`
     });
 
+    // Your current engine code handles this perfectly now:
     subs.forEach(sub => {
         const pushConfig = JSON.parse(sub.subscription_data);
         webpush.sendNotification(pushConfig, payload).catch(err => {
+            // If a token is expired (uninstalled app), delete it from DB
             if (err.statusCode === 410 || err.statusCode === 404) {
-                supabase.from('user_subscriptions').delete().eq('subscription_data', sub.subscription_data).then();
+                supabase.from('user_subscriptions').delete().eq('subscription_data', sub.subscription_data);
             }
         });
     });
