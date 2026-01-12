@@ -1,84 +1,60 @@
-/* --- GLOBAL LAYOUT FIXES --- */
-html,
-body {
-    height: 100dvh;
-    color: white;
-    /* Dynamic viewport for iOS */
-    margin: 0;
-    padding: 0;
-    background: #0b1220;
-    overflow: hidden;
-    /* Lock the body to prevent scrolling fights */
-    position: fixed;
-    /* Stop iOS rubber-banding */
-    width: 100%;
-}
-
-.app {
-    display: flex;
-    flex-direction: row;
-    height: 100dvh;
-    width: 100vw;
-    padding-top: env(safe-area-inset-top);
-    /* Clear battery/notch */
-    box-sizing: border-box;
-}
-
-/* --- THE ONLY SCROLLING AREA --- */
-.main-content {
-    flex: 1;
-    overflow-y: auto !important;
-    /* Enable scrolling only here */
-    -webkit-overflow-scrolling: touch;
-    padding: 12px;
-    padding-bottom: 120px !important;
-    /* Clear floating nav */
-}
-
-/* --- MOBILE NAVIGATION --- */
-@media (max-width: 1024px) {
-    .app {
-        flex-direction: column;
-    }
-
-    .side-nav {
-        display: none !important;
-    }
-
-    .mobile-nav {
-        display: flex !important;
-        position: fixed !important;
-        bottom: calc(5px + env(safe-area-inset-bottom)) !important;
-        /* Relaxes at bottom */
-        left: 15px;
-        right: 15px;
-        height: 65px;
-        background: rgba(14, 22, 32, 0.95);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 20px;
-        justify-content: space-around;
-        align-items: center;
-        z-index: 999999;
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-    }
-}
-
-.nav-item {
+/* --- NAVIGATION LAYOUT --- */
+.side-nav {
+    width: var(--nav-w);
+    background: var(--panel);
+    border-right: 1px solid var(--glass);
     display: flex;
     flex-direction: column;
     align-items: center;
-    color: #9aa4b2;
-    text-decoration: none;
+    padding: 24px 0;
+    gap: 28px;
+    flex-shrink: 0;
 }
 
-.nav-item.active {
-    color: #7c5cff !important;
+.mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    height: 65px;
+    background: var(--panel);
+    border-top: 1px solid var(--glass);
+    justify-content: space-around;
+    align-items: center;
+    z-index: 1000;
+}
+
+/* --- NAV ITEMS --- */
+.nav-item {
+    color: var(--muted);
+    font-size: 26px;
+    cursor: pointer;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: 0.2s;
 }
 
 .nav-item span {
     font-size: 9px;
-    font-weight: 700;
+    margin-top: 5px;
+    font-weight: 600;
     text-transform: uppercase;
-    margin-top: 4px;
+}
+
+.nav-item.active,
+.nav-item:hover {
+    color: var(--accent);
+}
+
+/* --- RESPONSIVE TOGGLE --- */
+@media (max-width: 1024px) {
+    .side-nav {
+        display: none;
+    }
+
+    .mobile-nav {
+        display: flex;
+    }
 }

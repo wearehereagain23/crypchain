@@ -3,8 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
     <title>Market — Cryp-Chain</title>
     <link rel="icon" href="./assets/badge/logo2.png">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -25,6 +24,7 @@
 
         html,
         body {
+            height: 100%;
             margin: 0;
             background: var(--bg);
             color: var(--text);
@@ -216,26 +216,11 @@
         </div>
 
         <nav class="mobile-nav">
-            <a href="index.html" class="nav-item ">
-                <i class="ph ph-chart-line"></i>
-                <span>Chart</span>
-            </a>
-            <a href="market.html" class="nav-item active">
-                <i class="ph ph-arrows-left-right"></i>
-                <span>Market</span>
-            </a>
-            <a href="profile.html" class="nav-item">
-                <i class="ph ph-user"></i>
-                <span>User</span>
-            </a>
-            <a href="history.html" class="nav-item ">
-                <i class="ph ph-clock-counter-clockwise"></i>
-                <span>History</span>
-            </a>
-            <div class="nav-item" onclick="handleLogout()">
-                <i class="ph ph-sign-out"></i>
-                <span>Exit</span>
-            </div>
+            <a href="index.html" class="nav-item"><i class="ph ph-chart-line"></i></a>
+            <a href="market.html" class="nav-item active"><i class="ph ph-arrows-left-right"></i></a>
+            <a href="profile.html" class="nav-item"><i class="ph ph-user"></i></a>
+            <a href="history.html" class="nav-item"><i class="ph ph-clock-counter-clockwise"></i></a>
+            <div class="nav-item" id="mobileLogout"><i class="ph ph-sign-out"></i></div>
         </nav>
     </div>
 
