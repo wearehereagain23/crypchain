@@ -3,6 +3,8 @@
 
 <head>
     <meta charset="utf-8" />
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Cryp-Chain</title>
     <link rel="icon" href="./chart/assets/badge/logo2.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
@@ -21,7 +23,10 @@
             align-items: center;
             justify-content: center;
             height: 100vh;
+            height: 100dvh;
+            /* Dynamic viewport height for mobile browsers */
             font-family: 'Inter', sans-serif;
+            margin: 0;
         }
 
         /* Background Glows */
@@ -70,9 +75,12 @@
         .glass-card {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 40px;
+            padding: 30px 20px;
+            /* Reduced padding for mobile */
             border-radius: 24px;
             text-align: center;
+            width: 90%;
+            /* Take up most of the width on mobile */
             max-width: 400px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
         }

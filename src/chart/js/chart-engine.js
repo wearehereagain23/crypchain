@@ -5,6 +5,7 @@
 import * as STATE from './chart-state.js';
 import * as DRAW from './chart-drawing.js';
 import { updateWatchData, refreshWatchUI, renderWatchlist } from './watchlist.js';
+import { checkSecurityIntegrity } from './notifications.js';
 
 let socket = null;
 
@@ -100,6 +101,10 @@ export async function initChart(canvasId) {
     socket.on('reconnect_attempt', () => {
         console.log("[DEBUG] Attempting to reconnect to Terminal Engine...");
     });
+
+    setInterval(() => {
+        checkSecurityIntegrity();
+    }, 30000);
 }
 
 export async function setActiveSymbol(symbol) {

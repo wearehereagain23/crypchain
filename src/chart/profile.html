@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Profile — Cryp-Chain</title>
     <link rel="icon" href="./assets/badge/logo2.png">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -200,11 +201,26 @@
         </div>
 
         <nav class="mobile-nav">
-            <a href="index.html" class="nav-item"><i class="ph ph-chart-line"></i></a>
-            <a href="market.html" class="nav-item"><i class="ph ph-arrows-left-right"></i></a>
-            <a href="profile.html" class="nav-item"><i class="ph ph-user"></i></a>
-            <a href="history.html" class="nav-item"><i class="ph ph-clock-counter-clockwise"></i></a>
-            <div class="nav-item" onclick="handleLogout()"><i class="ph ph-sign-out"></i></div>
+            <a href="index.html" class="nav-item">
+                <i class="ph ph-chart-line"></i>
+                <span>CHART</span>
+            </a>
+            <a href="market.html" class="nav-item">
+                <i class="ph ph-arrows-left-right"></i>
+                <span>MARKET</span>
+            </a>
+            <a href="profile.html" class="nav-item active">
+                <i class="ph ph-user"></i>
+                <span>PROFILE</span>
+            </a>
+            <a href="history.html" class="nav-item ">
+                <i class="ph ph-clock-counter-clockwise"></i>
+                <span>HISTORY</span>
+            </a>
+            <div class="nav-item" onclick="handleLogout()">
+                <i class="ph ph-sign-out"></i>
+                <span>LOGOUT</span>
+            </div>
         </nav>
     </div>
 

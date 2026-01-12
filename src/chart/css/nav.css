@@ -1,4 +1,10 @@
 /* --- NAVIGATION LAYOUT --- */
+:root {
+    /* Adjusted for a more balanced feel on mobile */
+    --nav-item-active: var(--accent);
+    --nav-item-muted: var(--muted);
+}
+
 .side-nav {
     width: var(--nav-w);
     background: var(--panel);
@@ -12,40 +18,70 @@
 }
 
 .mobile-nav {
-    display: none;
     position: fixed;
-    bottom: 0;
-    width: 100%;
-    height: 65px;
+    /* Increased spacing from bottom for iOS Home Indicator */
+    bottom: max(15px, env(safe-area-inset-bottom));
+    left: 12px;
+    right: 12px;
+    height: 70px;
+    /* Slightly taller for text labels */
     background: var(--panel);
-    border-top: 1px solid var(--glass);
+    border: 1px solid var(--glass);
+    border-radius: 22px;
+    display: none;
+    /* Hidden by default, shown in media query */
     justify-content: space-around;
     align-items: center;
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
     z-index: 1000;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    /* Prevent content from being cut off by the rounded corners */
+    padding: 0 10px;
 }
 
 /* --- NAV ITEMS --- */
 .nav-item {
-    color: var(--muted);
-    font-size: 26px;
-    cursor: pointer;
+    color: var(--nav-item-muted);
     text-decoration: none;
     display: flex;
     flex-direction: column;
     align-items: center;
-    transition: 0.2s;
+    justify-content: center;
+    flex: 1;
+    transition: all 0.2s ease-in-out;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.nav-item i {
+    font-size: 22px;
+    /* Balanced icon size */
+    transition: transform 0.2s ease;
 }
 
 .nav-item span {
-    font-size: 9px;
-    margin-top: 5px;
+    font-size: 10px;
+    /* Slightly larger for readability */
+    margin-top: 4px;
     font-weight: 600;
+    letter-spacing: 0.5px;
     text-transform: uppercase;
+    opacity: 0.8;
 }
 
+/* --- ACTIVE & HOVER STATES --- */
 .nav-item.active,
 .nav-item:hover {
-    color: var(--accent);
+    color: var(--nav-item-active);
+}
+
+.nav-item.active i {
+    transform: translateY(-2px);
+    /* Subtle lift for active item */
+}
+
+.nav-item.active span {
+    opacity: 1;
 }
 
 /* --- RESPONSIVE TOGGLE --- */
@@ -56,5 +92,10 @@
 
     .mobile-nav {
         display: flex;
+    }
+
+    /* Ensure the main container has room for the floating nav */
+    .main-content {
+        padding-bottom: 100px !important;
     }
 }
