@@ -15,29 +15,28 @@
     <link rel="stylesheet" href="./css/watchlist.css">
 
     <style>
-        /* COMPONENT-SPECIFIC STYLES ONLY */
-        :root {
-            --bull: #06d6a0;
-            --bear: #ff6b6b;
+        /* 1. RESTORE VISIBILITY FOR DARK THEME */
+        .watchlist-card h3,
+        .watchlist-item .asset-name,
+        .watchlist-item .price {
+            color: #ffffff !important;
         }
 
-        /* Chart Container */
+        /* 2. CHART AREA */
         .chart-container {
             background: var(--panel);
             border: 1px solid var(--glass);
             border-radius: 24px;
             padding: 20px;
             margin-bottom: 24px;
-            position: relative;
         }
 
         #chartCanvas {
             width: 100%;
             height: 400px;
-            cursor: crosshair;
         }
 
-        /* Watchlist Styling */
+        /* 3. WATCHLIST AREA */
         .watchlist-card {
             background: var(--panel);
             border: 1px solid var(--glass);
@@ -51,16 +50,6 @@
             align-items: center;
             padding: 16px;
             border-bottom: 1px solid var(--glass);
-            transition: 0.2s;
-            cursor: pointer;
-        }
-
-        .watchlist-item:last-child {
-            border-bottom: none;
-        }
-
-        .watchlist-item:hover {
-            background: rgba(255, 255, 255, 0.02);
         }
 
         .asset-info {
@@ -69,24 +58,8 @@
             gap: 12px;
         }
 
-        .asset-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-        }
-
         .price-info {
             text-align: right;
-        }
-
-        .price {
-            font-weight: 700;
-            font-size: 16px;
-        }
-
-        .change {
-            font-size: 12px;
-            font-weight: 600;
         }
 
         .change.plus {
@@ -99,7 +72,7 @@
 
         @media (max-width: 1024px) {
             #chartCanvas {
-                height: 300px;
+                height: 280px;
             }
         }
     </style>
