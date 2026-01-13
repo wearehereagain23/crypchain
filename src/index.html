@@ -206,12 +206,20 @@
                 if (Notification.permission !== 'granted') {
                     showEnableNotificationUI();
                 } else {
-                    // If permission is already granted, we don't need the splash.
-                    // Go straight to login to identify the user.
-                    window.location.href = './login.html';
+                    // --- ADDED CHECK HERE ---
+                    const savedLoginId = localStorage.getItem('login_ID');
+                    const savedUUID = localStorage.getItem('user_uuid');
+
+                    if (savedLoginId && savedUUID) {
+                        // User is already logged in, skip login and go to chart
+                        console.log("Session detected, jumping to chart...");
+                        window.location.href = `./chart/index.html?user_id=${savedUUID}`;
+                    } else {
+                        // No session found, go to login
+                        window.location.href = './login.html';
+                    }
                 }
             }
-
             // Initialize on load
             window.addEventListener('DOMContentLoaded', runSecurityCheck);
         </script>
