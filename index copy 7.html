@@ -1,0 +1,1585 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>TradingView-like Simulator — Smooth (3s candles)</title>
+    <meta name="description"
+        content="Local simulated TradingView-like chart and admin-driven AI trading simulator. Smooth TradingView-style interpolation, admin-controlled speeds." />
+    <style>
+        /* (UI styles preserved exactly — unchanged) */
+        :root {
+            --bg: #0b1220;
+            --panel: #0e1620;
+            --muted: #9aa4b2;
+            --text: #d7e6f3;
+            --bull: #06d6a0;
+            --bear: #ff6b6b;
+            --accent: #7c5cff;
+            --glass: rgba(255, 255, 255, 0.03);
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Inter, Arial, Helvetica, sans-serif;
+            -webkit-font-smoothing: antialiased
+        }
+
+        .app {
+            display: flex;
+            height: 100vh;
+            align-items: stretch;
+            justify-content: center;
+            padding: 12px;
+            box-sizing: border-box
+        }
+
+        .layout {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+            max-width: 1400px
+        }
+
+        .center {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .btn {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: #111827;
+            color: var(--text);
+            cursor: pointer
+        }
+
+        .btn.positive {
+            background: linear-gradient(180deg, #6ff8f2, #2fece6);
+            color: #002b2b;
+            font-weight: 700
+        }
+
+        .btn.negative {
+            background: linear-gradient(180deg, #ff6b6b, #e45757);
+            color: #fff;
+            font-weight: 700
+        }
+
+        .small {
+            font-size: 13px;
+            color: var(--muted)
+        }
+
+        .card {
+            background: transparent;
+            padding: 8px;
+            border-radius: 8px;
+            position: relative
+        }
+
+        canvas {
+            width: 100%;
+            height: 640px;
+            border-radius: 8px;
+            border: 1px solid var(--glass);
+            background: linear-gradient(180deg, #0c1116, #071016);
+            cursor: crosshair;
+            display: block
+        }
+
+        .watch {
+            width: 320px;
+            background: var(--panel);
+            border-radius: 8px;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid var(--glass);
+            display: flex;
+            flex-direction: column
+        }
+
+        .wl-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px
+        }
+
+        .wl-head h3 {
+            margin: 0;
+            font-size: 16px
+        }
+
+        .wl-list {
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding-right: 6px
+        }
+
+        .wl-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-radius: 6px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), transparent)
+        }
+
+        .wl-left {
+            display: flex;
+            gap: 8px;
+            align-items: center
+        }
+
+        .wl-logo {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #0b0b0b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 700
+        }
+
+        .wl-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block
+        }
+
+        .wl-symbol {
+            font-weight: 700
+        }
+
+        .wl-right {
+            text-align: right;
+            min-width: 120px
+        }
+
+        .wl-price {
+            font-weight: 800
+        }
+
+        .wl-change {
+            font-size: 12px;
+            margin-top: 4px
+        }
+
+        .up {
+            color: var(--bull)
+        }
+
+        .down {
+            color: var(--bear)
+        }
+
+        .small-muted {
+            font-size: 12px;
+            color: var(--muted)
+        }
+
+        .top-info {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-left: 12px
+        }
+
+        .info-pill {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            min-width: 120px;
+            text-align: center
+        }
+
+        #timeTip {
+            position: absolute;
+            pointer-events: none;
+            display: none;
+            background: rgba(10, 12, 16, 0.95);
+            color: #fff;
+            padding: 6px 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            font-size: 12px;
+            white-space: nowrap;
+            transform: translate(-50%, 8px)
+        }
+
+        .overlay {
+            position: absolute;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 60;
+            background: linear-gradient(180deg, rgba(2, 6, 10, 0.6), rgba(2, 6, 10, 0.6));
+            backdrop-filter: blur(6px);
+            transition: opacity .3s ease
+        }
+
+        .overlay .box {
+            background: linear-gradient(180deg, #071016, #0c1116);
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            color: var(--text)
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 4px solid rgba(255, 255, 255, 0.06);
+            border-top-color: var(--accent);
+            animation: spin 1s linear infinite
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        .hud {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            font-size: 14px
+        }
+
+        .hud .box {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 6px 10px;
+            border-radius: 6px
+        }
+
+        .ai-badge {
+            position: absolute;
+            left: 14px;
+            top: 14px;
+            padding: 6px 10px;
+            border-radius: 8px;
+            background: linear-gradient(90deg, rgba(124, 92, 255, 0.12), rgba(124, 92, 255, 0.06));
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 13px;
+            display: none;
+            z-index: 70;
+            box-shadow: 0 6px 18px rgba(7, 8, 12, 0.6)
+        }
+
+        /* History dropdown styling (small and placed near balance; non-intrusive) */
+        .history-btn {
+            position: relative;
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            background: rgba(255, 255, 255, 0.02);
+            cursor: pointer;
+            margin-left: 8px;
+            font-size: 13px;
+        }
+
+        .history-panel {
+            position: absolute;
+            right: 12px;
+            top: 42px;
+            min-width: 260px;
+            max-width: 360px;
+            max-height: 320px;
+            overflow: auto;
+            background: #071016;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 8px;
+            display: none;
+            z-index: 200;
+            box-shadow: 0 8px 30px rgba(2, 6, 10, 0.6);
+        }
+
+        .history-item {
+            padding: 8px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            background: rgba(255, 255, 255, 0.01);
+            font-size: 13px;
+        }
+
+        .history-empty {
+            color: var(--muted);
+            font-size: 13px;
+            padding: 8px;
+        }
+
+        @media (max-width:1180px) {
+            .layout {
+                flex-direction: column
+            }
+
+            .watch {
+                width: 100%;
+                order: 2;
+                height: 220px;
+                overflow: auto
+            }
+
+            canvas {
+                height: 420px
+            }
+
+            .wl-right {
+                min-width: 90px
+            }
+
+            .top-info {
+                flex-wrap: wrap
+            }
+        }
+
+        @media (max-width:520px) {
+            .wl-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px
+            }
+
+            .wl-right {
+                text-align: left;
+                min-width: 0
+            }
+
+            .wl-logo {
+                width: 36px;
+                height: 36px
+            }
+
+            canvas {
+                height: 360px
+            }
+        }
+
+        .wl-list::-webkit-scrollbar {
+            width: 8px
+        }
+
+        .wl-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px
+        }
+
+        .sr-only {
+            position: absolute;
+            left: -9999px;
+            top: auto;
+            width: 1px;
+            height: 1px;
+            overflow: hidden
+        }
+
+        #historyMenu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background: #0b1220;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            width: 260px;
+            z-index: 2000;
+        }
+
+        #historyMenu.show {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <div class="layout">
+            <div class="center">
+                <div class="topbar">
+                    <button id="aiBtn" class="btn positive">Trade with AI Assist</button>
+                    <button id="closeBtn" class="btn negative" style="display:none">Close Trade</button>
+                    <div style="flex:1"></div>
+
+                    <div class="top-info" aria-live="polite">
+                        <div class="info-pill small-muted">Requested Amount<br><strong id="ui_reqAmount">-</strong>
+                        </div>
+                        <div class="info-pill small-muted">Requested Profit %<br><strong id="ui_reqPct">-</strong></div>
+                        <div class="info-pill small-muted">Final Profit (if computed)<br><strong
+                                id="ui_finalProfit">-</strong></div>
+                    </div>
+
+                    <div class="hud">
+                        <div class="box small-muted">Market: <strong id="marketState">Running</strong></div>
+                        <div class="box small-muted">Profit: <strong id="profitSoFar">$0.00</strong></div>
+                        <div class="box small-muted">Balance: <strong id="balanceSoFar">$0.00</strong></div>
+                    </div>
+
+                    <!-- History button (non-invasive) -->
+                    <div style="position:relative;">
+                        <button id="historyBtn" class="history-btn">History</button>
+                        <div id="historyPanel" class="history-panel" role="menu" aria-hidden="true">
+                            <div id="historyList">
+                                <div class="history-empty">No history yet</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="position:relative">
+                    <canvas id="chartCanvas" aria-label="Simulated market chart"></canvas>
+                    <div id="timeTip" role="tooltip" class="sr-only"></div>
+                    <div id="overlay" class="overlay">
+                        <div class="box">
+                            <div class="spinner" aria-hidden="true"></div>
+                            <div id="overlayText">Connecting...</div>
+                        </div>
+                    </div>
+                    <div id="aiBadge" class="ai-badge">AI MODE ACTIVE</div>
+                </div>
+            </div>
+
+            <div class="watch" id="watchlistPanel">
+                <div class="wl-head">
+                    <h3>Watchlist — LocalSim</h3>
+                    <div class="small-muted">Local</div>
+                </div>
+                <div class="wl-list" id="wlList" aria-live="polite"></div>
+                <div style="margin-top:8px" class="small-muted">All data simulated locally. Watchlist syncs with chart
+                    (BTC leads).</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Firebase compat libraries (firestore only) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+    <script type="module">
+        /***** FIREBASE SETUP (unchanged) *****/
+        const firebaseConfig = {
+            apiKey: "AIzaSyAliz8XS8MQkG5AnbKcmgKsMsUhhUjIIFY",
+            authDomain: "origin-template.firebaseapp.com",
+            projectId: "origin-template",
+            storageBucket: "origin-template.firebasestorage.app",
+            messagingSenderId: "554234259871",
+            appId: "1:554234259871:web:54f86019d079851234f5aa"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Document refs
+        const tradeDocRef = db.collection('tradeState').doc('current');
+        const userDocRef = db.collection('users').doc('00009');
+        const liveControlRef = db.collection('liveControl').doc('current'); // chartcontrol.html
+        const adminDocRef = db.collection('admin').doc('admin');
+
+        /***** DOM refs *****/
+        const canvas = document.getElementById('chartCanvas');
+        const ctx = canvas.getContext('2d');
+        const aiBtn = document.getElementById('aiBtn');
+        const closeBtn = document.getElementById('closeBtn');
+        const overlay = document.getElementById('overlay');
+        const overlayText = document.getElementById('overlayText');
+        const profitSoFarEl = document.getElementById('profitSoFar');
+        const balanceSoFarEl = document.getElementById('balanceSoFar');
+        const marketStateEl = document.getElementById('marketState');
+        const wlList = document.getElementById('wlList');
+        const timeTip = document.getElementById('timeTip');
+        const aiBadge = document.getElementById('aiBadge');
+
+        const ui_reqAmount = document.getElementById('ui_reqAmount');
+        const ui_reqPct = document.getElementById('ui_reqPct');
+        const ui_finalProfit = document.getElementById('ui_finalProfit');
+
+        const historyBtn = document.getElementById('historyBtn');
+        const historyPanel = document.getElementById('historyPanel');
+        const historyList = document.getElementById('historyList');
+
+        /***** canvas sizing helper *****/
+        function fitCanvas() {
+            const r = canvas.getBoundingClientRect();
+            const DPR = Math.max(1, window.devicePixelRatio || 1);
+            canvas.width = Math.floor(r.width * DPR);
+            canvas.height = Math.floor(r.height * DPR);
+            ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        }
+        window.addEventListener('resize', () => { fitCanvas(); scheduleDraw(); });
+        fitCanvas();
+
+        /***** State & constants *****/
+        const MAX_CANDLES = 1000;
+        const PADDING = 50, RIGHT_PADDING = 140, CANDLE_W = 14, CANDLE_GAP = 4;
+
+        // Default live settings (chartcontrol.html overwrites these via Firestore)
+        let LIVE_TICK_MS = 900;     // tick frequency for live updates (ms)
+        let TIMEFRAME = 60;         // candle finalize duration (seconds)
+
+        // Default AI tick (admin sets aiTickMs on trade doc)
+        let AI_TICK_MS = 3000;      // "animation tick" for AI interpolation; admin may override with aiTickMs
+
+        // trend parameters
+        const TREND = { amplitude: 0.006, noise: 0.0015, waveLength: 180 };
+
+        // data
+        let candles = [], currentCandle = null, lastPrice = 30000.0;
+        let running = false, simActive = false;
+        let simCfg = null, simPlan = [], simProfit = 0, simInitialAmount = 0;
+
+        // timers & rAF
+        let rafId = null, lastFrameTime = 0, frameCounter = 0;
+        let tickTimer = null, candleTimer = null, watchTicker = null;
+        let tradeUnsub = null, userUnsub = null, liveControlUnsub = null;
+        let historyUnsub = null;
+
+        /***** Watchlist (12 currencies) *****/
+        // NOTE: per your request I restored the "old ones" for the last two entries:
+        const WATCH = [
+            { sym: 'BTC', price: lastPrice, basePrice: lastPrice, file: '/assets/logos/btc.png' },
+            { sym: 'ETH', price: 1700, basePrice: 1700, file: '/assets/logos/eth.png' },
+            { sym: 'BNB', price: 300, basePrice: 300, file: '/assets/logos/bnb.png' },
+            { sym: 'SOL', price: 120, basePrice: 120, file: '/assets/logos/sol.png' },
+            { sym: 'ADA', price: 0.9, basePrice: 0.9, file: '/assets/logos/ada.png' },
+            { sym: 'XRP', price: 0.45, basePrice: 0.45, file: '/assets/logos/xrp.png' },
+            { sym: 'DOGE', price: 0.07, basePrice: 0.07, file: '/assets/logos/doge.png' },
+            { sym: 'MATIC', price: 1.1, basePrice: 1.1, file: '/assets/logos/matic.png' },
+            { sym: 'LTC', price: 90, basePrice: 90, file: '/assets/logos/ltc.png' },
+            { sym: 'TRX', price: 0.09, basePrice: 0.09, file: '/assets/logos/trx.png' },
+            // restored "old" entries (DOT, AVAX) per request — their images should be in /assets/logos/dot.png & avax.png
+            { sym: 'DOT', price: 6.5, basePrice: 6.5, file: '/assets/logos/dot.png' },
+            { sym: 'AVAX', price: 22, basePrice: 22, file: '/assets/logos/avax.png' }
+        ];
+
+        /***** persistence helpers *****/
+        function getLocalItem(k) { try { const v = localStorage.getItem(k); return v === null ? null : v; } catch (e) { return null; } }
+        function setLocalItem(k, v) { try { localStorage.setItem(k, String(v)); } catch (e) { } }
+        function removeLocalItem(k) { try { localStorage.removeItem(k); } catch (e) { } }
+
+        /***** seed / load *****/
+        function loadLocal() {
+            const raw = getLocalItem('chart_state_clean_v1');
+            if (raw !== null) {
+                try {
+                    const obj = JSON.parse(raw);
+                    if (Array.isArray(obj.candles)) candles = obj.candles.map(c => ({ ...c, time: new Date(c.time) }));
+                    if (obj.current && typeof obj.current === 'object') currentCandle = { ...obj.current, time: new Date(obj.current.time) };
+                    if (typeof obj.lastPrice === 'number') lastPrice = obj.lastPrice;
+                } catch (e) {
+                    seedCandles(180);
+                }
+            } else {
+                seedCandles(180);
+            }
+
+            const balRaw = getLocalItem('local_balance');
+            if (balRaw !== null) {
+                const b = Number(balRaw);
+                if (!Number.isNaN(b)) balanceSoFarEl.textContent = '$' + b.toFixed(2);
+            }
+            const taRaw = getLocalItem('tradeAmountPersist');
+            if (taRaw !== null) {
+                const t = Number(taRaw);
+                if (!Number.isNaN(t)) simInitialAmount = t;
+            }
+            const lpRaw = getLocalItem('liveProfitPersist');
+            if (lpRaw !== null) {
+                const l = Number(lpRaw);
+                if (!Number.isNaN(l)) simProfit = l;
+            }
+        }
+        function saveLocal() {
+            try {
+                const payload = { candles: candles.slice(-MAX_CANDLES), current: currentCandle, lastPrice };
+                setLocalItem('chart_state_clean_v1', JSON.stringify(payload));
+                setLocalItem('tradeAmountPersist', simInitialAmount);
+                setLocalItem('liveProfitPersist', simProfit);
+            } catch (e) { }
+        }
+
+        function seedCandles(n) {
+            candles = [];
+            let p = lastPrice;
+            const now = Date.now();
+            for (let i = 0; i < n; i++) {
+                const open = p * (1 + (Math.random() - 0.5) * 0.002);
+                const close = open * (1 + (Math.random() - 0.5) * 0.004);
+                const high = Math.max(open, close) * (1 + Math.random() * 0.002);
+                const low = Math.min(open, close) * (1 - Math.random() * 0.002);
+                candles.push({ open, high, low, close, time: new Date(now - (n - i) * TIMEFRAME * 1000) });
+                p = close;
+            }
+            lastPrice = p;
+            currentCandle = { open: lastPrice, high: lastPrice, low: lastPrice, close: lastPrice, time: new Date() };
+            saveLocal();
+        }
+
+        /***** drawing helpers (kept same visuals) *****/
+        function roundRect(ctx, x, y, w, h, r, fill, stroke) { if (!r) r = 6; ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); if (fill) ctx.fill(); if (stroke) ctx.stroke(); }
+        function isDifferentDay(a, b) { if (!a || !b) return true; a = new Date(a); b = new Date(b); return a.getFullYear() !== b.getFullYear() || a.getMonth() !== b.getMonth() || a.getDate() !== b.getDate(); }
+        function formatDateShort(d) { return new Date(d).toLocaleDateString([], { month: 'short', day: 'numeric' }); }
+
+        let hoveredCandle = null;
+        let cross = { x: null, y: null };
+
+        let drawScheduled = false;
+        function scheduleDraw() {
+            if (drawScheduled) return;
+            drawScheduled = true;
+            if (rafId) cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(() => { drawScheduled = false; drawChart(); });
+        }
+
+        function drawChart() {
+            const w = canvas.clientWidth, h = canvas.clientHeight;
+            ctx.clearRect(0, 0, w, h);
+
+            const slot = CANDLE_W + CANDLE_GAP;
+            const available = w - PADDING - RIGHT_PADDING;
+            const maxVisible = Math.max(4, Math.floor((available + CANDLE_GAP) / slot));
+            const visibleBase = candles.slice(-maxVisible + 1);
+            const visible = [...visibleBase];
+            if (currentCandle) visible.push(currentCandle);
+            if (!visible.length) return;
+
+            const prices = visible.flatMap(c => [c.high, c.low]);
+            const maxP = Math.max(...prices), minP = Math.min(...prices);
+            const yOf = p => { if (maxP === minP) return h / 2; return 50 + ((maxP - p) / (maxP - minP)) * (h - 100); };
+
+            // grid
+            ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+            ctx.lineWidth = 1;
+            for (let gx = PADDING; gx < w - RIGHT_PADDING; gx += 80) { ctx.beginPath(); ctx.setLineDash([2, 4]); ctx.moveTo(gx, 50); ctx.lineTo(gx, h - 50); ctx.stroke(); }
+            ctx.setLineDash([]);
+            ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+            for (let gy = 50; gy <= h - 50; gy += 60) { ctx.beginPath(); ctx.moveTo(PADDING, gy); ctx.lineTo(w - 50, gy); ctx.stroke(); }
+
+            // y labels
+            ctx.fillStyle = '#bfc9d6'; ctx.font = '12px Arial'; ctx.textAlign = 'right';
+            for (let i = 0; i <= 6; i++) { const price = minP + ((maxP - minP) / 6) * i; const y = yOf(price); ctx.fillText(price.toFixed(5), w - 12, y + 4); }
+
+            // candles
+            const totalWidth = visible.length * CANDLE_W + Math.max(0, visible.length - 1) * CANDLE_GAP;
+            const startX = (w - RIGHT_PADDING) - totalWidth;
+
+            visible.forEach((c, i) => {
+                const x = startX + i * slot;
+                const yOpen = yOf(c.open), yClose = yOf(c.close), yHigh = yOf(c.high), yLow = yOf(c.low);
+                const bullish = c.close >= c.open;
+                const col = bullish ? '#06d6a0' : '#ff6b6b';
+                ctx.strokeStyle = col; ctx.beginPath(); ctx.moveTo(x + CANDLE_W / 2, yHigh); ctx.lineTo(x + CANDLE_W / 2, yLow); ctx.stroke();
+                const top = Math.min(yOpen, yClose); const height = Math.max(1, Math.abs(yClose - yOpen));
+                ctx.fillStyle = col; ctx.fillRect(x, top, CANDLE_W, height);
+            });
+
+            // last price line
+            const lastC = visible[visible.length - 1];
+            if (lastC) {
+                const cp = lastC.close; const yCp = yOf(cp); const bull = lastC.close >= lastC.open;
+                const lineColor = bull ? 'rgba(6,214,160,0.6)' : 'rgba(255,107,107,0.85)';
+                ctx.setLineDash([6, 6]); ctx.strokeStyle = lineColor; ctx.beginPath(); ctx.moveTo(PADDING, yCp); ctx.lineTo(w - RIGHT_PADDING, yCp); ctx.stroke(); ctx.setLineDash([]);
+                const bw = 96, bh = 26, bx = w - RIGHT_PADDING, by = yCp - bh / 2;
+                ctx.fillStyle = bull ? 'rgba(6,214,160,0.12)' : 'rgba(255,107,107,0.12)'; roundRect(ctx, bx, by, bw, bh, 6, true, false);
+                ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.strokeRect(bx, by, bw, bh);
+                ctx.fillStyle = bull ? '#06d6a0' : '#ff6b6b'; ctx.textAlign = 'center'; ctx.font = '12px monospace';
+                ctx.fillText(cp.toFixed(5), bx + bw / 2, by + bh / 2 + 1);
+            }
+
+            // OHLC when hover
+            if (hoveredCandle) {
+                const hC = hoveredCandle;
+                const txt = `O:${hC.open.toFixed(5)} H:${hC.high.toFixed(5)} L:${hC.low.toFixed(5)} C:${hC.close.toFixed(5)}`;
+                ctx.fillStyle = 'rgba(6,8,10,0.92)'; roundRect(ctx, PADDING + 8, 10, 320, 30, 6, true, false);
+                ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.strokeRect(PADDING + 8, 10, 320, 30);
+                ctx.fillStyle = hC.close >= hC.open ? '#06d6a0' : '#ff6b6b';
+                ctx.font = '12px monospace'; ctx.textAlign = 'left';
+                ctx.fillText(txt, PADDING + 18, 32);
+            }
+
+            // X labels
+            ctx.fillStyle = '#9daab8'; ctx.font = '11px Arial'; ctx.textAlign = 'center';
+            const labelStep = Math.max(1, Math.floor(visible.length / 6)); let prevDate = null;
+            for (let i = 0; i < visible.length; i++) {
+                if (i % labelStep !== 0 && !isDifferentDay(visible[i].time, visible[i - 1]?.time)) continue;
+                const x = startX + i * slot + CANDLE_W / 2; const dt = visible[i].time;
+                const dateObj = new Date(dt);
+                const label = isDifferentDay(dateObj, prevDate) ? formatDateShort(dateObj) : dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                ctx.fillText(label, x, canvas.clientHeight - 26); prevDate = dateObj;
+            }
+
+            // crosshair
+            if (cross.x != null && cross.y != null) {
+                ctx.setLineDash([4, 4]); ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+                ctx.beginPath(); ctx.moveTo(cross.x, 50); ctx.lineTo(cross.x, canvas.clientHeight - 50); ctx.moveTo(PADDING, cross.y); ctx.lineTo(canvas.clientWidth - RIGHT_PADDING, cross.y); ctx.stroke(); ctx.setLineDash([]);
+                drawCrosshairLabels(visible);
+            }
+        }
+
+        function drawCrosshairLabels(visible) {
+            if (!visible || visible.length === 0) return;
+            const x = cross.x, y = cross.y;
+            const prices = visible.flatMap(c => [c.high, c.low]);
+            const maxP = Math.max(...prices), minP = Math.min(...prices);
+            const priceVal = minP + ((canvas.clientHeight - 50 - y) / (canvas.clientHeight - 100)) * (maxP - minP);
+            const bw = 84, bh = 22, bx = canvas.clientWidth - RIGHT_PADDING + 6, by = Math.max(12, Math.min(canvas.clientHeight - 75, y - bh / 2));
+            ctx.fillStyle = 'rgba(8,10,14,0.9)'; roundRect(ctx, bx, by, bw, bh, 4, true, false); ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.strokeRect(bx, by, bw, bh);
+            ctx.fillStyle = '#9daab8'; ctx.font = '12px monospace'; ctx.textAlign = 'center'; ctx.fillText(priceVal.toFixed(5), bx + bw / 2, by + bh / 2 + 4);
+
+            const slot = CANDLE_W + CANDLE_GAP; const available = canvas.clientWidth - PADDING - RIGHT_PADDING; const maxVisible = Math.max(4, Math.floor((available + CANDLE_GAP) / slot)); const visibleBase = candles.slice(-maxVisible + 1); const vis = [...visibleBase]; if (currentCandle) vis.push(currentCandle);
+            const totalWidth = vis.length * slot; const startX = (canvas.clientWidth - RIGHT_PADDING) - totalWidth;
+            const idx = Math.round((x - startX - CANDLE_W / 2) / slot);
+            const validIdx = Math.min(Math.max(idx, 0), vis.length - 1);
+            const candle = vis[validIdx];
+            if (candle) {
+                const d = new Date(candle.time); const labelTime = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const tw = 82, th = 22, tx = Math.max(PADDING + 10, Math.min(canvas.clientWidth - RIGHT_PADDING - 10 - tw, x - tw / 2)), ty = canvas.clientHeight - 45;
+                ctx.fillStyle = 'rgba(8,10,14,0.9)'; roundRect(ctx, tx, ty, tw, th, 4, true, false); ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.strokeRect(tx, ty, tw, th); ctx.fillStyle = '#9daab8'; ctx.fillText(labelTime, tx + tw / 2, ty + th / 2 + 4);
+            }
+        }
+
+        /***** Watchlist rendering & smoothing *****/
+        function renderWatchlist() {
+            wlList.innerHTML = '';
+            WATCH.forEach(w => {
+                const row = document.createElement('div'); row.className = 'wl-item'; row.id = 'wl_' + w.sym;
+                // use local png logo if exists
+                const logoHTML = `<div class="wl-logo"><img src="${w.file}" alt="${w.sym}" onerror="this.style.display='none'"></div>`;
+                row.innerHTML = `<div class="wl-left">${logoHTML}<div><div class="wl-symbol">${w.sym}/USD</div></div></div><div class="wl-right"><div class="wl-price" id="p_${w.sym}">--</div><div class="wl-change" id="c_${w.sym}">--</div></div>`;
+                wlList.appendChild(row);
+            });
+            refreshWatchUI();
+        }
+
+        function refreshWatchUI() {
+            WATCH.forEach(w => {
+                const pEl = document.getElementById('p_' + w.sym), cEl = document.getElementById('c_' + w.sym);
+                if (!pEl || !cEl) return;
+                const displayPrice = (typeof w.price === 'number' && w.price >= 100) ? w.price.toFixed(2) : (typeof w.price === 'number' ? w.price.toFixed(5) : '--');
+                pEl.textContent = displayPrice;
+                const prevBase = w.basePrice;
+                let pct = 0;
+                if (typeof prevBase === 'number' && prevBase !== 0 && typeof w.price === 'number') {
+                    pct = (w.price - prevBase) / prevBase * 100;
+                }
+                cEl.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+                cEl.className = 'wl-change ' + (pct >= 0 ? 'up' : 'down');
+            });
+        }
+
+        /***** Unified interpolation engine *****/
+        function liveFrameStep(deltaMs) {
+            frameCounter++;
+            const angle = (frameCounter % (TREND.waveLength * 2)) / (TREND.waveLength * 2) * Math.PI * 2;
+            const wave = Math.sin(angle) * TREND.amplitude;
+            const jitter = (Math.random() - 0.5) * TREND.noise;
+            const factor = 1 + wave + jitter;
+            lastPrice = lastPrice * factor;
+
+            if (!simActive) {
+                if (!currentCandle) currentCandle = newCandle(lastPrice);
+                currentCandle.close = lastPrice;
+                if (currentCandle.high === undefined || currentCandle.high < currentCandle.close) currentCandle.high = currentCandle.close;
+                if (currentCandle.low === undefined || currentCandle.low > currentCandle.close) currentCandle.low = currentCandle.close;
+            }
+
+            // pull BTC to lastPrice
+            const btc = WATCH.find(it => it.sym === 'BTC');
+            if (btc) btc.price = lastPrice;
+
+            // other coins drift softer
+            WATCH.forEach(it => {
+                if (it.sym !== 'BTC') {
+                    const drift = 1 + ((Math.random() - 0.5) * TREND.noise * 0.6);
+                    if (typeof it.price === 'number') it.price = +(it.price * drift).toFixed(6);
+                }
+            });
+        }
+
+        function rafLoop(ts) {
+            if (!lastFrameTime) lastFrameTime = ts;
+            const delta = ts - lastFrameTime;
+            lastFrameTime = ts;
+
+            liveFrameStep(delta);
+            scheduleDraw();
+
+            rafId = requestAnimationFrame(rafLoop);
+        }
+
+        function startRaf() { if (rafId) return; lastFrameTime = 0; rafId = requestAnimationFrame(rafLoop); }
+        function stopRaf() { if (rafId) cancelAnimationFrame(rafId); rafId = null; lastFrameTime = 0; }
+
+        function newCandle(price) { return { open: price, high: price, low: price, close: price, time: new Date() }; }
+
+        /***** Helper: compute live range for scaling AI plans  *****/
+        function getLiveRange() {
+            try {
+                const sample = candles.slice(-200);
+                if (currentCandle) sample.push(currentCandle);
+                const prices = sample.flatMap(c => [c.high, c.low]);
+                if (!prices.length) return { min: lastPrice * 0.995, max: lastPrice * 1.005 };
+                return { min: Math.min(...prices), max: Math.max(...prices) };
+            } catch (e) { return { min: lastPrice * 0.995, max: lastPrice * 1.005 }; }
+        }
+
+        /***** Live timers (controlled by chartcontrol.html) *****/
+        function startMarket() {
+            if (running || simActive) return;
+            running = true;
+            marketStateEl.textContent = 'Running';
+
+            // tickTimer updates price smoothly at LIVE_TICK_MS (can be changed by liveControl)
+            if (tickTimer) clearInterval(tickTimer);
+            tickTimer = setInterval(() => {
+                if (simActive) return; // leave AI to its animate routine
+                // slight bias drift
+                const angle = (frameCounter % (TREND.waveLength * 2)) / (TREND.waveLength * 2) * Math.PI * 2;
+                const wave = Math.sin(angle) * TREND.amplitude;
+                const jitter = (Math.random() - 0.5) * TREND.noise;
+                const factor = 1 + wave + jitter;
+                lastPrice = +(lastPrice * factor).toFixed(6);
+
+                if (!currentCandle) currentCandle = newCandle(lastPrice);
+                currentCandle.close = lastPrice;
+                currentCandle.high = Math.max(currentCandle.high, lastPrice);
+                currentCandle.low = Math.min(currentCandle.low, lastPrice);
+
+                // BTC sync
+                const btc = WATCH.find(w => w.sym === 'BTC');
+                if (btc) btc.price = lastPrice;
+
+                // alt drift
+                WATCH.forEach(w => {
+                    if (w.sym !== 'BTC') {
+                        const altDrift = (Math.random() - 0.5) * 0.0015;
+                        w.price = +(w.price * (1 + altDrift)).toFixed(6);
+                    }
+                });
+
+                refreshWatchUI();
+                drawChart();
+            }, LIVE_TICK_MS);
+
+            // Candle finalize (TIMEFRAME sec)
+            if (candleTimer) clearInterval(candleTimer);
+            candleTimer = setInterval(() => {
+                if (simActive) return;
+                if (currentCandle) {
+                    currentCandle.time = new Date();
+                    candles.push(currentCandle);
+                    if (candles.length > MAX_CANDLES) candles.shift();
+                    const btc = WATCH.find(it => it.sym === 'BTC');
+                    if (btc) { btc.basePrice = currentCandle.close; btc.price = currentCandle.close; }
+                }
+                currentCandle = newCandle(lastPrice);
+                saveLocal();
+            }, TIMEFRAME * 1000);
+
+            startRaf();
+
+            // keep watch UI running
+            if (watchTicker) clearInterval(watchTicker);
+            watchTicker = setInterval(() => refreshWatchUI(), 900);
+        }
+
+        function stopMarket() {
+            running = false;
+            if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
+            if (candleTimer) { clearInterval(candleTimer); candleTimer = null; }
+            if (watchTicker) { clearInterval(watchTicker); watchTicker = null; }
+            marketStateEl.textContent = 'Stopped';
+        }
+
+        /***** AI planning and animation *****/
+        function planAICandles(start, count, targetPct) {
+            const n = Math.max(1, Math.floor(count));
+            const targetFactor = 1 + (targetPct / 100);
+            const per = Math.pow(targetFactor, 1 / n);
+            const seq = [];
+            let p = start;
+            for (let i = 0; i < n; i++) {
+                let factor = per * (1 + (Math.random() - 0.5) * 0.08);
+                if (Math.random() < 0.14) factor *= 0.95 + Math.random() * 0.08;
+                const open = +p;
+                const close = +(open * factor);
+                const range = Math.abs(close - open);
+                const wick = Math.max(open * 0.0012, range * (0.3 + Math.random() * 0.8));
+                const high = Math.max(open, close, open + wick);
+                const low = Math.min(open, close, open - wick);
+                seq.push({ open, high, low, close });
+                p = close;
+            }
+            const prod = seq.reduce((acc, s) => acc * (s.close / s.open), 1);
+            const adjust = targetFactor / (prod || 1);
+            if (seq.length > 0) {
+                const last = seq[seq.length - 1];
+                const adjClose = last.close * adjust;
+                last.close = adjClose;
+                last.high = Math.max(last.high, adjClose);
+                last.low = Math.min(last.low, adjClose);
+            }
+
+            // SCALE plan to live range so AI movement amplitude matches live
+            try {
+                const liveR = getLiveRange();
+                const allPrices = seq.flatMap(c => [c.high, c.low]);
+                const planMin = Math.min(...allPrices), planMax = Math.max(...allPrices);
+                if (planMax > planMin && liveR.max > liveR.min) {
+                    const liveMid = (liveR.max + liveR.min) / 2;
+                    const planMid = (planMax + planMin) / 2;
+                    const scale = ((liveR.max - liveR.min) * 0.9) / (planMax - planMin);
+                    const offset = liveMid - planMid * scale;
+                    seq.forEach(c => {
+                        ['open', 'high', 'low', 'close'].forEach(k => {
+                            c[k] = c[k] * scale + offset;
+                        });
+                    });
+                }
+            } catch (e) { /* ignore scaling errors */ }
+
+            return seq;
+        }
+
+        // animate planned candle using same interpolation engine as live (so motion looks identical)
+        async function animatePlannedCandle(plan, durationMs) {
+            return new Promise(resolve => {
+                const startOpen = plan.open;
+                const startTime = performance.now();
+                const totalSteps = Math.max(5, Math.floor(durationMs / AI_TICK_MS)); // Admin controls step speed
+                let step = 0;
+
+                function nextFrame() {
+                    if (!simActive) return resolve();
+                    step++;
+                    const t = step / totalSteps;
+                    const ease = t * t * (3 - 2 * t);
+                    const currentClose = startOpen + (plan.close - startOpen) * ease;
+                    const wiggle = (Math.random() - 0.5) * startOpen * 0.0001;
+                    const closeVal = currentClose + wiggle;
+
+                    currentCandle = {
+                        open: startOpen,
+                        high: Math.max(plan.high, closeVal),
+                        low: Math.min(plan.low, closeVal),
+                        close: closeVal,
+                        time: new Date()
+                    };
+
+                    const btc = WATCH.find(it => it.sym === 'BTC');
+                    if (btc) btc.price = closeVal;
+                    WATCH.forEach(it => { if (it.sym !== 'BTC') it.price *= (1 + (Math.random() - 0.5) * 0.0004); });
+
+                    refreshWatchUI();
+                    scheduleDraw();
+
+                    if (step < totalSteps) {
+                        setTimeout(nextFrame, AI_TICK_MS);
+                    } else {
+                        resolve();
+                    }
+                }
+
+                nextFrame();
+            });
+        }
+
+        // Toggle dropdown open/close
+        document.addEventListener("DOMContentLoaded", () => {
+            const histBtn = document.getElementById("historyBtn");
+            const histMenu = document.getElementById("historyMenu");
+
+            if (!histBtn || !histMenu) return;
+
+            let open = false;
+
+            // Toggle dropdown
+            histBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                open = !open;
+                histMenu.classList.toggle("show", open);
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener("click", (e) => {
+                if (!open) return;
+                const clickedInside =
+                    histMenu.contains(e.target) || histBtn.contains(e.target);
+                if (!clickedInside) {
+                    histMenu.classList.remove("show");
+                    open = false;
+                }
+            });
+
+            // Optional: close dropdown on ESC key
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Escape" && open) {
+                    histMenu.classList.remove("show");
+                    open = false;
+                }
+            });
+        });
+
+
+        // Start AI (reads admin-supplied durationPerCandle and aiTickMs from trade doc)
+        async function startAI(cfg) {
+            if (!cfg || typeof cfg !== 'object') return;
+            const candlesCount = Number(cfg.candlesCount);
+            const durationPerCandle = Number(cfg.durationPerCandle); // seconds (used for finalization)
+            const profitTarget = Number(cfg.profitTarget);
+            const initialAmount = Number(cfg.initialAmount);
+            const tickMs = Number(cfg.aiTickMs || AI_TICK_MS); // admin-controlled "tick speed" that determines how fast the per-candle animation ticks look (ms)
+            if (!Number.isFinite(candlesCount) || candlesCount <= 0) return Swal.fire('Invalid', 'candlesCount invalid', 'error');
+            if (!Number.isFinite(durationPerCandle) || durationPerCandle <= 0) return Swal.fire('Invalid', 'durationPerCandle invalid', 'error');
+            if (!Number.isFinite(profitTarget)) return Swal.fire('Invalid', 'profitTarget invalid', 'error');
+            if (!Number.isFinite(initialAmount) || initialAmount <= 0) return Swal.fire('Invalid', 'initialAmount invalid', 'error');
+
+            // configure AI tick to match admin preference (this controls animation "speed" inside animatePlannedCandle)
+            AI_TICK_MS = Math.max(50, tickMs);
+
+            simCfg = { candlesCount, durationPerCandle, profitTarget, initialAmount };
+            simInitialAmount = initialAmount;
+            // generate plan and scale to live range (so range matches live)
+            simPlan = planAICandles(lastPrice, candlesCount, profitTarget);
+            simProfit = 0;
+            simActive = true;
+
+            // record start time for history
+            const aiStartTime = new Date();
+
+            // stop live finalize & timers; keep rAF running so the interpolation engine is same
+            stopMarket(); // will stop tick timers and candle timer; we will rely on animatePlannedCandle pacing
+            aiBadge.style.display = 'block';
+            aiBtn.style.display = 'none';
+            aiBtn.disabled = true;
+            closeBtn.style.display = 'inline-block';
+            overlay.style.display = 'flex';
+            overlayText.textContent = 'AI Mode — starting...';
+            await sleep(200);
+            overlay.style.display = 'none';
+
+            try { await tradeDocRef.set({ status: 'running', aiMode: true, startedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }); } catch (e) { console.warn('tradeDoc set running failed', e); }
+
+            // run planned candles sequentially using durationPerCandle from admin but animate using AI_TICK_MS pacing (so motion looks same as live)
+            for (let i = 0; i < simPlan.length && simActive; i++) {
+                const plan = simPlan[i];
+                // animate over (durationPerCandle * 1000) but the interpolation engine is identical
+                await animatePlannedCandle(plan, durationPerCandle * 1000);
+
+                // finalize candle
+                const final = { open: plan.open, high: Math.max(plan.high, currentCandle.high), low: Math.min(plan.low, currentCandle.low), close: plan.close, time: new Date() };
+                candles.push(final);
+                if (candles.length > MAX_CANDLES) candles.shift();
+                currentCandle = { open: final.close, high: final.close, low: final.close, close: final.close, time: new Date() };
+
+                // compute profit by candle height instead of axis jump
+                const pct = (final.close - final.open) / final.open;
+                const delta = +(simInitialAmount * pct).toFixed(2);
+                simProfit = +(simProfit + delta).toFixed(2);
+                profitSoFarEl.textContent = '$' + simProfit.toFixed(2);
+
+                // update user doc incrementally
+                try {
+                    await userDocRef.set({ liveProfit: simProfit, tradeAmount: simInitialAmount, isTrading: true }, { merge: true });
+                } catch (e) { console.warn('liveProfit write failed', e); }
+
+                saveLocal();
+                await sleep(50);
+            }
+
+            // finalize AI: write finalProfit + completed metadata
+            try {
+                await tradeDocRef.set({
+                    finalProfit: simProfit,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    status: 'completed',
+                    aiMode: false,
+                    // clear admin placeholders on trade end so admin UI resets
+                    candlesCount: null,
+                    durationPerCandle: null,
+                    aiTickMs: null,
+                    initialAmount: null,
+                    profitTarget: null
+                }, { merge: true });
+                await userDocRef.set({ finalProfit: simProfit, liveProfit: 0, isTrading: false, tradeAmount: 0, reservedAmount: 0 }, { merge: true });
+            } catch (e) { console.warn('final write failed', e); }
+
+            // add to user's history collection
+            try {
+                const endedAt = new Date();
+                const historyRef = userDocRef.collection('history');
+                await historyRef.add({
+                    startedAt: aiStartTime,
+                    endedAt,
+                    amount: simInitialAmount,
+                    profit: simProfit
+                });
+                // reload history panel automatically
+                loadHistoryOnce();
+            } catch (e) {
+                console.warn('Could not write history', e);
+            }
+
+            simActive = false;
+            aiBadge.style.display = 'none';
+            closeBtn.style.display = 'none';
+            overlay.style.display = 'flex';
+            overlayText.textContent = 'AI Mode — completed';
+            await sleep(450);
+            overlay.style.display = 'none';
+
+            try { await tradeDocRef.set({ status: 'completed', aiMode: false, completedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }); } catch (e) { console.warn('set completed fail', e); }
+
+            // resume live simulation (read latest liveControl values)
+            startMarket();
+            aiBtn.style.display = '';
+            aiBtn.disabled = false;
+        }
+
+        function sleep(ms) { return new Promise(res => setTimeout(res, ms)); }
+
+        /***** Add Profit button helper (unchanged semantics + resets placeholders + clears trade doc for admin) *****/
+        function ensureAddProfitButton() {
+            if (document.getElementById('addProfitBtn')) return;
+            const addBtn = document.createElement('button');
+            addBtn.className = 'btn positive'; addBtn.textContent = 'Add Profit to Balance'; addBtn.style.marginLeft = '12px'; addBtn.id = 'addProfitBtn';
+            addBtn.onclick = async () => {
+                try {
+                    const uSnap = await userDocRef.get(); if (!uSnap.exists) { Swal.fire('Error', 'User doc missing', 'error'); return; }
+                    const u = uSnap.data();
+                    if (u.accountBalance === undefined || u.accountBalance === null) { Swal.fire('Error', 'accountBalance missing', 'error'); return; }
+                    const currentBalance = Number(u.accountBalance);
+                    if (Number.isNaN(currentBalance)) { Swal.fire('Error', 'Invalid account balance', 'error'); return; }
+                    const initial = (u.tradeAmount === undefined || u.tradeAmount === null) ? simInitialAmount : Number(u.tradeAmount);
+                    if (Number.isNaN(initial)) { Swal.fire('Error', 'Invalid trade amount', 'error'); return; }
+                    const profitDelta = (u.finalProfit === undefined || u.finalProfit === null) ? simProfit : Number(u.finalProfit);
+                    if (Number.isNaN(profitDelta)) { Swal.fire('Error', 'Invalid final profit', 'error'); return; }
+
+                    // compute final balances
+                    const finalAmount = +(initial + profitDelta).toFixed(2);
+                    const newBalance = +(currentBalance + finalAmount).toFixed(2);
+
+                    // write user & trade doc and reset fields so admin UI placeholders clear
+                    await userDocRef.set({ accountBalance: newBalance.toString(), finalProfit: 0, liveProfit: 0, tradeAmount: 0, isTrading: false, reservedAmount: 0 }, { merge: true });
+                    await tradeDocRef.set({
+                        status: 'idle',
+                        finalProfit: 0,
+                        profitTarget: 0,
+                        initialAmount: 0,
+                        aiMode: false,
+                        candlesCount: null,
+                        durationPerCandle: null,
+                        aiTickMs: null
+                    }, { merge: true });
+
+                    setLocalItem('local_balance', newBalance);
+                    profitSoFarEl.textContent = '$0.00';
+                    balanceSoFarEl.textContent = '$' + newBalance.toFixed(2);
+
+                    // reset UI placeholders (user requested)
+                    ui_reqAmount.textContent = '-';
+                    ui_reqPct.textContent = '-';
+                    ui_finalProfit.textContent = '-';
+
+                    removeLocalItem('tradeAmountPersist'); removeLocalItem('liveProfitPersist'); removeLocalItem('pendingProfit');
+                    simProfit = 0; simInitialAmount = 0;
+                    const el = document.getElementById('addProfitBtn'); if (el) el.remove();
+                    Swal.fire('Success', 'Profit added to your account balance.', 'success');
+                } catch (e) { console.error('AddProfit failed', e); Swal.fire('Error', 'Could not add profit', 'error'); }
+            };
+            document.querySelector('.topbar').appendChild(addBtn);
+            setLocalItem('pendingProfit', 'true');
+        }
+
+        /***** Firestore listeners (tradeState & user & liveControl & history) *****/
+        function setupListeners() {
+            // tradeState listener (admin controls AI mode start/params)
+            if (tradeUnsub) tradeUnsub();
+            tradeUnsub = tradeDocRef.onSnapshot(async snap => {
+                if (!snap.exists) {
+                    overlay.style.display = 'none';
+                    aiBtn.style.display = '';
+                    aiBtn.disabled = false;
+                    ui_reqAmount.textContent = '-';
+                    ui_reqPct.textContent = '-';
+                    ui_finalProfit.textContent = '-';
+                    return;
+                }
+                const data = snap.data();
+                const statusRaw = data.status;
+                const status = (typeof statusRaw === 'string') ? statusRaw.toLowerCase() : 'idle';
+                const initialAmount = (data.initialAmount === undefined || data.initialAmount === null) ? null : Number(data.initialAmount);
+                const profitTarget = (data.profitTarget === undefined || data.profitTarget === null) ? null : Number(data.profitTarget);
+
+                // update UI top placeholders
+                ui_reqAmount.textContent = (initialAmount === null || Number.isNaN(initialAmount)) ? '-' : ('$' + initialAmount.toFixed(2));
+                ui_reqPct.textContent = (profitTarget === null || Number.isNaN(profitTarget)) ? '-' : (profitTarget.toFixed(2) + '%');
+
+                if (status === 'waiting' && initialAmount !== null && !Number.isNaN(initialAmount) && profitTarget !== null && !Number.isNaN(profitTarget)) {
+                    const expectedFinal = +(initialAmount * (1 + (profitTarget / 100)));
+                    ui_finalProfit.textContent = '$' + expectedFinal.toFixed(2);
+                    overlay.style.display = 'flex';
+                    overlayText.textContent = '⏳ Waiting for admin approval...';
+                    aiBtn.style.display = 'none';
+                    aiBtn.disabled = true;
+                    marketStateEl.textContent = 'Awaiting Approval';
+                } else if (data.finalProfit !== undefined && data.finalProfit !== null) {
+                    const delta = Number(data.finalProfit);
+                    if (!Number.isNaN(delta) && initialAmount !== null && !Number.isNaN(initialAmount)) {
+                        ui_finalProfit.textContent = '$' + (initialAmount + delta).toFixed(2);
+                    } else if (!Number.isNaN(delta)) {
+                        ui_finalProfit.textContent = '$' + delta.toFixed(2);
+                    } else ui_finalProfit.textContent = '-';
+                } else ui_finalProfit.textContent = '-';
+
+                // status transitions
+                if (status === 'approved' || status === 'running') {
+                    overlay.style.display = 'none';
+                    marketStateEl.textContent = (status === 'approved') ? 'Approved' : 'AI Mode';
+                    aiBtn.style.display = 'none';
+                    aiBtn.disabled = true;
+
+                    // auto-start AI if not active: pass admin aiTickMs so simulated speed follows admin
+                    if (!simActive) {
+                        if (data.candlesCount === undefined || data.durationPerCandle === undefined || initialAmount === null || profitTarget === null) {
+                            console.warn('Approved doc missing required fields; cannot start AI');
+                        } else {
+                            const cfg = { candlesCount: Number(data.candlesCount), durationPerCandle: Number(data.durationPerCandle), profitTarget: profitTarget, initialAmount: initialAmount, aiTickMs: Number(data.aiTickMs || AI_TICK_MS) };
+                            await sleep(80);
+                            startAI(cfg);
+                        }
+                    }
+                } else if (status === 'completed' || status === 'idle') {
+                    overlay.style.display = 'none';
+                    aiBadge.style.display = 'none';
+                    aiBtn.style.display = '';
+                    aiBtn.disabled = false;
+                    marketStateEl.textContent = 'Running';
+                    if (data.finalProfit !== undefined && data.finalProfit !== null) {
+                        const delta = Number(data.finalProfit);
+                        if (!Number.isNaN(delta) && delta > 0) ensureAddProfitButton();
+                    }
+                    // also reset top placeholders on completion/idle
+                    ui_reqAmount.textContent = '-';
+                    ui_reqPct.textContent = '-';
+                    ui_finalProfit.textContent = '-';
+                } else if (status === 'cancelled') {
+                    overlay.style.display = 'none';
+                    aiBadge.style.display = 'none';
+                    aiBtn.style.display = '';
+                    aiBtn.disabled = false;
+                    marketStateEl.textContent = 'Running';
+                    try {
+                        const uSnap = await userDocRef.get();
+                        if (uSnap.exists) {
+                            const u = uSnap.data();
+                            if (u.reservedAmount !== undefined && u.reservedAmount !== null) {
+                                const reserved = Number(u.reservedAmount);
+                                if (!Number.isNaN(reserved) && reserved > 0) {
+                                    if (u.accountBalance !== undefined && u.accountBalance !== null) {
+                                        const bal = Number(u.accountBalance);
+                                        if (!Number.isNaN(bal)) {
+                                            const newBal = +(bal + reserved).toFixed(2);
+                                            await userDocRef.set({ accountBalance: newBal.toString(), reservedAmount: 0, tradeAmount: 0, liveProfit: 0, finalProfit: 0, isTrading: false }, { merge: true });
+                                            setLocalItem('local_balance', newBal);
+                                            balanceSoFarEl.textContent = '$' + newBal.toFixed(2);
+                                        } else console.warn('Cannot refund: stored accountBalance invalid');
+                                    }
+                                }
+                            }
+                        }
+                    } catch (err) { console.warn('Refund attempt failed', err); }
+
+                    ui_reqAmount.textContent = '-';
+                    ui_reqPct.textContent = '-';
+                    ui_finalProfit.textContent = '-';
+                    removeLocalItem('tradeAmountPersist');
+                    removeLocalItem('liveProfitPersist');
+                } else if (status === 'error') {
+                    overlay.style.display = 'flex';
+                    overlayText.textContent = 'Admin error';
+                    aiBtn.style.display = 'none';
+                    aiBtn.disabled = true;
+                    const msg = data.error;
+                    await Swal.fire({ title: 'Admin Error', html: String(msg), icon: 'error' });
+                    overlay.style.display = 'none';
+                    aiBtn.style.display = '';
+                    aiBtn.disabled = false;
+                } else {
+                    console.warn('Unknown trade status:', status);
+                }
+            });
+
+            // user listener
+            if (userUnsub) userUnsub();
+            userUnsub = userDocRef.onSnapshot(async snap => {
+                if (!snap.exists) return;
+                const u = snap.data();
+                if (u.accountBalance !== undefined && u.accountBalance !== null) {
+                    const bal = Number(u.accountBalance);
+                    if (!Number.isNaN(bal)) {
+                        balanceSoFarEl.textContent = '$' + bal.toFixed(2);
+                        setLocalItem('local_balance', bal);
+                    }
+                }
+                if (u.liveProfit !== undefined && u.liveProfit !== null) {
+                    const live = Number(u.liveProfit);
+                    if (!Number.isNaN(live)) profitSoFarEl.textContent = '$' + live.toFixed(2);
+                }
+                if (u.finalProfit !== undefined && u.finalProfit !== null && u.isTrading === false) {
+                    const finalDelta = Number(u.finalProfit);
+                    if (!Number.isNaN(finalDelta) && finalDelta > 0) ensureAddProfitButton();
+                }
+            });
+
+            // liveControl listener (chartcontrol.html) — controls live tick speed & timeframe
+            if (liveControlUnsub) liveControlUnsub();
+            liveControlUnsub = liveControlRef.onSnapshot(snap => {
+                if (!snap.exists) return;
+                const d = snap.data();
+                let restart = false;
+                if (d.tickInterval) {
+                    LIVE_TICK_MS = Number(d.tickInterval);
+                    restart = true;
+                    console.log('Live tick interval set to', LIVE_TICK_MS);
+                }
+                if (d.candleDuration) {
+                    TIMEFRAME = Number(d.candleDuration);
+                    restart = true;
+                    console.log('Live timeframe set to', TIMEFRAME);
+                }
+                // restart live timers only when NOT in AI mode
+                if (restart && !simActive) {
+                    stopMarket();
+                    startMarket();
+                }
+            });
+
+            // history live listener (for user dropdown)
+            if (historyUnsub) historyUnsub();
+            historyUnsub = userDocRef.collection('history').orderBy('endedAt', 'desc').limit(20).onSnapshot(snap => {
+                if (!snap || snap.empty) {
+                    historyList.innerHTML = '<div class="history-empty">No history yet</div>';
+                    return;
+                }
+                const rows = [];
+                snap.forEach(docS => {
+                    const d = docS.data();
+                    rows.push({ id: docS.id, ...d });
+                });
+                // render
+                historyList.innerHTML = rows.map(r => {
+                    const s = (r.startedAt && r.startedAt.toDate) ? r.startedAt.toDate() : new Date(r.startedAt);
+                    const e = (r.endedAt && r.endedAt.toDate) ? r.endedAt.toDate() : new Date(r.endedAt);
+                    const amt = (typeof r.amount === 'number') ? ('$' + r.amount.toFixed(2)) : (r.amount || '-');
+                    const prof = (typeof r.profit === 'number') ? ('$' + r.profit.toFixed(2)) : (r.profit || '-');
+                    return `<div class="history-item"><div><strong>${s.toLocaleString()}</strong></div><div style="font-size:12px;color:#9aa4b2">End: ${e.toLocaleString()}</div><div style="margin-top:6px">Amount: ${amt} — Profit: ${prof}</div></div>`;
+                }).join('');
+            });
+        }
+
+        /***** UI wrappers: Trade setup (keeps Swal flows, min $50) *****/
+        async function getAdminLevels() {
+            try {
+                const snap = await adminDocRef.get();
+                if (!snap.exists) return null;
+                const data = snap.data();
+                const out = {};
+                Object.keys(data || {}).forEach(k => { out[k.toLowerCase()] = data[k]; });
+                return out;
+            } catch (e) { console.warn('getAdminLevels fail', e); return null; }
+        }
+        async function getUserData() {
+            try {
+                const snap = await userDocRef.get();
+                if (!snap.exists) return null;
+                const u = snap.data();
+                return { accountBalance: Number((u.accountBalance || '0').toString().replace(/[^0-9.-]+/g, '')) || 0, accountLevel: (u.accountLevel || 'starter').toString() };
+            } catch (e) { console.warn('getUserData fail', e); return null; }
+        }
+
+        aiBtn.addEventListener('click', async () => {
+            if (simActive) return Swal.fire('AI Running', 'Please wait until the current AI session finishes', 'info');
+            const r = await Swal.fire({
+                title: 'AI Trade — Explanation',
+                html: `<p style="text-align:left;color:#d7e6f3">AI Assist runs a deterministic simulation across a sequence of candlesticks chosen by the admin (number of candles and duration per candle). You choose the amount to trade and the profit percentage target (options depend on your account level). After you submit the request, an admin must approve. When approved, AI runs the simulation that will aim to reach your selected profit target (final result allowed +/-5%).</p>`,
+                confirmButtonText: 'Set up trade',
+                showCancelButton: true,
+                cancelButtonText: 'Cancel',
+                background: '#0b1220', color: '#d7e6f3', width: 640
+            });
+            if (!r.isConfirmed) return;
+            await openSetupForm();
+        });
+
+        async function openSetupForm() {
+            const adminLevels = await getAdminLevels();
+            const user = await getUserData();
+            if (!adminLevels) return Swal.fire('Error', 'Admin level data missing. Contact admin.', 'error');
+            if (!user) return Swal.fire('Error', 'User data missing. Contact support.', 'error');
+
+            const order = ['starter', 'mini', 'silver', 'gold', 'platinum'];
+            const userIndex = Math.max(0, order.indexOf(user.accountLevel.toLowerCase()));
+            const otherOptions = order.map((lv, i) => {
+                const val = adminLevels[lv];
+                const disabled = i > userIndex ? 'disabled' : '';
+                return `<option value="${(val === undefined || val === null) ? '' : Number(val)}" ${disabled}>${lv.toUpperCase()} — ${(val === undefined || val === null) ? 'N/A' : Number(val) + '%'}${disabled ? ' (Upgrade)' : ''}</option>`;
+            }).join('');
+
+            const { value: form } = await Swal.fire({
+                title: 'Set up Trade',
+                html: `<div style="text-align:left"><label>Amount (USD)</label><input id="swAmount" class="swal2-input" type="number" min="50" placeholder="50"></div><div style="text-align:left;margin-top:8px"><label>Profit target</label><select id="swPct" class="swal2-select">${otherOptions}</select></div><div style="font-size:12px;color:#9aa4b2;margin-top:8px">Minimum: $50. Your balance will be debited immediately.</div>`,
+                focusConfirm: false,
+                showCancelButton: true,
+                preConfirm: async () => {
+                    const amt = Number(document.getElementById('swAmount').value);
+                    const pct = Number(document.getElementById('swPct').value);
+                    if (!Number.isFinite(amt) || amt < 50) { Swal.showValidationMessage('Amount is too low to start trading with.'); return false; }
+                    const userFresh = await getUserData(); if (amt > userFresh.accountBalance) { Swal.showValidationMessage('Insufficient funds.'); return false; }
+                    return { amount: amt, pct };
+                }
+            });
+
+            if (!form) return;
+
+            try {
+                const uSnap = await userDocRef.get(); if (!uSnap.exists) return Swal.fire('Error', 'User doc missing', 'error');
+                const u = uSnap.data();
+                if (u.accountBalance === undefined || u.accountBalance === null) { Swal.fire('Error', 'accountBalance not set on user doc. Cannot place trade.', 'error'); return; }
+                const currentBal = Number(u.accountBalance);
+                if (Number.isNaN(currentBal)) { Swal.fire('Error', 'Invalid stored accountBalance', 'error'); return; }
+                if (form.amount > currentBal) { Swal.fire('Insufficient funds', 'Trade amount exceeds your account balance', 'error'); return; }
+                const newBal = +(currentBal - form.amount).toFixed(2);
+
+                // reserve funds immediately
+                await userDocRef.set({ accountBalance: newBal.toString(), reservedAmount: form.amount, tradeAmount: form.amount, isTrading: false }, { merge: true });
+                await tradeDocRef.set({ status: 'waiting', initialAmount: form.amount, profitTarget: form.pct, requestedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+
+                setLocalItem('local_balance', newBal);
+                balanceSoFarEl.textContent = '$' + newBal.toFixed(2);
+                ui_reqAmount.textContent = '$' + form.amount.toFixed(2);
+                ui_reqPct.textContent = form.pct.toFixed(2) + '%';
+                const expectedFinal = +(form.amount * (1 + form.pct / 100));
+                ui_finalProfit.textContent = '$' + expectedFinal.toFixed(2);
+                Swal.fire('Requested', 'Trade requested and amount reserved. Awaiting admin approval.', 'success');
+            } catch (err) {
+                console.error('Request error', err);
+                Swal.fire('Error', 'Could not create trade request', 'error');
+            }
+        }
+
+        /***** Canvas pointer handlers (keeps same UX) *****/
+        canvas.addEventListener('mousemove', (ev) => {
+            const r = canvas.getBoundingClientRect();
+            cross.x = ev.clientX - r.left; cross.y = ev.clientY - r.top;
+            const w = canvas.clientWidth; const slot = CANDLE_W + CANDLE_GAP; const available = w - PADDING - RIGHT_PADDING; const maxVisible = Math.max(4, Math.floor((available + CANDLE_GAP) / slot)); const visibleBase = candles.slice(-maxVisible + 1); const visible = [...visibleBase]; if (currentCandle) visible.push(currentCandle); const totalWidth = visible.length * slot; const startX = (w - RIGHT_PADDING) - totalWidth; const idx = Math.round((cross.x - startX - CANDLE_W / 2) / slot); const validIdx = Math.min(Math.max(idx, 0), visible.length - 1); hoveredCandle = visible[validIdx] || null;
+
+            if (hoveredCandle) {
+                timeTip.style.display = 'block'; timeTip.textContent = new Date(hoveredCandle.time).toLocaleString(); let left = startX + validIdx * slot + CANDLE_W / 2; left = Math.max(PADDING + 20, Math.min(left, canvas.clientWidth - RIGHT_PADDING - 20)); timeTip.style.left = left + 'px'; timeTip.style.top = (canvas.clientHeight - 42) + 'px'; timeTip.classList.remove('sr-only');
+            } else { timeTip.style.display = 'none'; timeTip.classList.add('sr-only'); }
+
+            scheduleDraw();
+        });
+
+        canvas.addEventListener('mouseleave', () => { cross.x = null; cross.y = null; hoveredCandle = null; timeTip.style.display = 'none'; scheduleDraw(); });
+
+        window.addEventListener('beforeunload', () => { if (tradeUnsub) tradeUnsub(); if (userUnsub) userUnsub(); if (liveControlUnsub) liveControlUnsub(); if (historyUnsub) historyUnsub(); stopMarket(); stopRaf(); });
+
+        /***** Close trade button handler (fixed) *****/
+        closeBtn.addEventListener('click', async () => {
+            // stop AI gracefully and mark trade cancelled/completed per admin policy
+            if (simActive) {
+                // stop AI run
+                simActive = false;
+                // attempt to set trade doc to cancelled so admin sees it ended early
+                try {
+                    await tradeDocRef.set({ status: 'cancelled', aiMode: false, adminLastAction: 'closed_by_user', cancelledAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+                } catch (e) { console.warn('closeBtn write failed', e); }
+                aiBadge.style.display = 'none';
+                closeBtn.style.display = 'none';
+                overlay.style.display = 'flex'; overlayText.textContent = 'AI Mode — stopped'; await sleep(250); overlay.style.display = 'none';
+                // restore live
+                startMarket();
+            } else {
+                // nothing to close
+                Swal.fire('No AI running', 'There is currently no active AI session to close.', 'info');
+            }
+        });
+
+        /***** History dropdown UI handling *****/
+        historyBtn.addEventListener('click', (ev) => {
+            const vis = historyPanel.style.display === 'block';
+            historyPanel.style.display = vis ? 'none' : 'block';
+            historyPanel.setAttribute('aria-hidden', vis ? 'true' : 'false');
+            if (!vis) {
+                // if opening, ensure we have recent history (listener will populate)
+                loadHistoryOnce();
+            }
+        });
+
+        async function loadHistoryOnce() {
+            try {
+                const snap = await userDocRef.collection('history').orderBy('endedAt', 'desc').limit(20).get();
+                if (!snap || snap.empty) {
+                    historyList.innerHTML = '<div class="history-empty">No history yet</div>';
+                    return;
+                }
+                const rows = [];
+                snap.forEach(docS => {
+                    const d = docS.data();
+                    rows.push({ id: docS.id, ...d });
+                });
+                historyList.innerHTML = rows.map(r => {
+                    const s = (r.startedAt && r.startedAt.toDate) ? r.startedAt.toDate() : new Date(r.startedAt);
+                    const e = (r.endedAt && r.endedAt.toDate) ? r.endedAt.toDate() : new Date(r.endedAt);
+                    const amt = (typeof r.amount === 'number') ? ('$' + r.amount.toFixed(2)) : (r.amount || '-');
+                    const prof = (typeof r.profit === 'number') ? ('$' + r.profit.toFixed(2)) : (r.profit || '-');
+                    return `<div class="history-item"><div><strong>${s.toLocaleString()}</strong></div><div style="font-size:12px;color:#9aa4b2">End: ${e.toLocaleString()}</div><div style="margin-top:6px">Amount: ${amt} — Profit: ${prof}</div></div>`;
+                }).join('');
+            } catch (e) {
+                historyList.innerHTML = '<div class="history-empty">Could not load history</div>';
+            }
+        }
+
+        /***** Init sequence *****/
+        loadLocal();
+        renderWatchlist();
+        scheduleDraw();
+        setupListeners();
+        startMarket();
+
+        console.log('Index rebuilt: unified engine, admin-controlled aiTick, 12-watchlist, close button fixed, history dropdown, placeholders reset on add profit.');
+
+    </script>
+</body>
+
+</html>

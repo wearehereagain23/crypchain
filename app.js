@@ -108,24 +108,38 @@ function restartHeartbeat() {
             min_price: RANGE_STATE[sym].currentMin,
             max_price: RANGE_STATE[sym].currentMax
         }));
+
+        // 1. RUN THE SIMULATION
+        // The simulation.js now updates m.high and m.low internally
         runTick(LIVE_MARKET, simLimits);
+
         const now = Date.now();
         SYMBOLS.forEach((sym, i) => {
             const m = LIVE_MARKET[sym];
             if (!m || m.isTransitioning) return;
-            m.high = Math.max(m.high, m.price);
-            m.low = Math.min(m.low, m.price);
+
+            // 2. CRITICAL CHANGE: 
+            // We NO LONGER just check m.price. 
+            // We trust simulation.js which tracks the extreme spikes (wicks).
+            // (Make sure your simulation.js has the tracking we added earlier)
 
             if (now >= (m.candleStartTime + activeSettings.duration)) {
                 m.isTransitioning = true;
-                const snapshot = { symbol: sym, close: m.price, open: m.open, high: m.high, low: m.low, time: m.candleStartTime };
+
+                // Use the high/low that simulation.js recorded over the whole minute
+                const snapshot = {
+                    symbol: sym,
+                    close: m.price,
+                    open: m.open,
+                    high: m.high,
+                    low: m.low,
+                    time: m.candleStartTime
+                };
 
                 setTimeout(() => {
                     const res = snapshot.close >= snapshot.open ? 'green' : 'red';
-                    // NOTIFICATION INTEGRATION
                     processTradeLogic(supabase, sym, res).then((tradeRecord) => {
                         if (tradeRecord) {
-                            console.log(`[DEBUG] Trade closed for ${tradeRecord.user_id}, sending notification...`);
                             notifyTrade(supabase, tradeRecord.user_id, tradeRecord);
                         }
                     }).catch(e => console.error(e.message));
@@ -133,9 +147,14 @@ function restartHeartbeat() {
 
                 HISTORY_CACHE[sym].push(snapshot);
                 if (HISTORY_CACHE[sym].length > 150) HISTORY_CACHE[sym].shift();
+
                 io.emit('start_new_simulation', { symbol: sym, confirmedCandle: snapshot });
+
+                // 3. RESET FOR NEXT CANDLE
                 m.candleStartTime += activeSettings.duration;
-                m.open = m.high = m.low = snapshot.close;
+                m.open = m.price;
+                m.high = m.price; // Reset high to current price
+                m.low = m.price;  // Reset low to current price
                 m.isTransitioning = false;
             }
         });
